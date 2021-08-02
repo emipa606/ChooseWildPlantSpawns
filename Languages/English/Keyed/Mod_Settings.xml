@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <CWPS.settings>Settings</CWPS.settings>
+  <CWPS.resetall.label>Manual config reset</CWPS.resetall.label>
+  <CWPS.resetall.tooltip>Reset all modified spawn-rates</CWPS.resetall.tooltip>
+  <CWPS.resetall.button>Reset all</CWPS.resetall.button>
+  <CWPS.resetall.confirm>This will reset ALL spawn-values to vanilla values for all biomes</CWPS.resetall.confirm>
+  <CWPS.resetone.confirm>This will reset the spawn values for {0} to vanilla values</CWPS.resetone.confirm>
+  <CWPS.logging.label>Enable verbose logging</CWPS.logging.label>
+  <CWPS.logging.tooltip>Shows verbose logging, for finding errors</CWPS.logging.tooltip>
+  <CWPS.version.label>Installed mod-version: {0}</CWPS.version.label>
+  <CWPS.reset.button>Reset</CWPS.reset.button>
+  <CWPS.undo.button>Undo</CWPS.undo.button>
+  <CWPS.save.button>Save</CWPS.save.button>
+  <CWPS.search>Search plant</CWPS.search>
+  <CWPS.customexists>Has custom spawn-rates defined</CWPS.customexists>
+</LanguageData>
