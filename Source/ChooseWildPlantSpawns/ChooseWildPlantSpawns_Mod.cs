@@ -37,6 +37,7 @@ namespace ChooseWildPlantSpawns.Settings
         private static Vector2 scrollPosition;
 
         private static Dictionary<ThingDef, float> currentBiomePlantRecords;
+        private static Dictionary<ThingDef, int> currentBiomePlantDecimals;
 
         private static string selectedDef = "Settings";
 
@@ -97,6 +98,7 @@ namespace ChooseWildPlantSpawns.Settings
                 }
 
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
                 selectedDef = value;
 
                 if (value == null || value == "Settings")
@@ -108,6 +110,16 @@ namespace ChooseWildPlantSpawns.Settings
                 foreach (var plant in Main.AllPlants)
                 {
                     currentBiomePlantRecords[plant] = selectedBiome.CommonalityOfPlant(plant);
+                    var decimals =
+                        (currentBiomePlantRecords[plant] - Math.Truncate(currentBiomePlantRecords[plant]))
+                        .ToString().Length;
+
+                    if (decimals < 4)
+                    {
+                        decimals = 4;
+                    }
+
+                    currentBiomePlantDecimals[plant] = decimals;
                 }
             }
         }
@@ -125,6 +137,7 @@ namespace ChooseWildPlantSpawns.Settings
             if (currentBiomePlantRecords == null)
             {
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
                 Main.LogMessage($"currentBiomePlantRecords null for {SelectedDef}");
                 return;
             }
@@ -139,6 +152,7 @@ namespace ChooseWildPlantSpawns.Settings
             {
                 Main.LogMessage($"VanillaSpawnRates not contain {SelectedDef}");
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
                 return;
             }
 
@@ -171,12 +185,14 @@ namespace ChooseWildPlantSpawns.Settings
                 }
 
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
                 Main.LogMessage($"currentBiomeList for {SelectedDef} empty");
                 return;
             }
 
             instance.Settings.CustomSpawnRates[SelectedDef] = new SaveableDictionary(currentBiomeList);
             currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+            currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
         }
 
         /// <summary>
@@ -358,6 +374,17 @@ namespace ChooseWildPlantSpawns.Settings
                                         {
                                             currentBiomePlantRecords[plant] =
                                                 selectedBiome.CommonalityOfPlant(plant);
+                                            var decimals =
+                                                (currentBiomePlantRecords[plant] -
+                                                 Math.Truncate(currentBiomePlantRecords[plant]))
+                                                .ToString().Length;
+
+                                            if (decimals < 4)
+                                            {
+                                                decimals = 4;
+                                            }
+
+                                            currentBiomePlantDecimals[plant] = decimals;
                                         }
                                     }));
                             }, "CWPS.reset.button".Translate(),
@@ -381,7 +408,9 @@ namespace ChooseWildPlantSpawns.Settings
                     var plants = Main.AllPlants;
                     if (!string.IsNullOrEmpty(searchText))
                     {
-                        plants = Main.AllPlants.Where(def => def.label.ToLower().Contains(searchText.ToLower()))
+                        plants = Main.AllPlants.Where(def =>
+                                def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack.Name.ToLower()
+                                    .Contains(searchText.ToLower()))
                             .ToList();
                     }
 
@@ -424,8 +453,10 @@ namespace ChooseWildPlantSpawns.Settings
                         currentBiomePlantRecords[plant] = (float) Math.Round((decimal) Widgets.HorizontalSlider(
                             sliderRect,
                             currentBiomePlantRecords[plant], 0,
-                            10f, false, currentBiomePlantRecords[plant].ToString(), plantTitle,
-                            modInfo, 0.0001f), 4);
+                            10f, false,
+                            currentBiomePlantRecords[plant].ToString($"N{currentBiomePlantDecimals[plant]}")
+                                .TrimEnd('0').TrimEnd('.'), plantTitle,
+                            modInfo), currentBiomePlantDecimals[plant]);
                         GUI.color = Color.white;
                         DrawIcon(plant,
                             new Rect(rowRect.position, iconSize));

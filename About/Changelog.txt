@@ -1,4 +1,7 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.0.1.0 - Removed clicking issue, added support for smaller numbers, search also searches in modname
+
+
 1.0.0.0 - First publish
 
