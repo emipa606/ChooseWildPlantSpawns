@@ -5,6 +5,10 @@ namespace ChooseWildPlantSpawns
 {
     public class ChooseWildPlantSpawns_Settings : ModSettings
     {
+        public Dictionary<string, float> CustomDensities = new Dictionary<string, float>();
+        private List<string> customDensitiesKeys;
+        private List<float> customDensitiesValues;
+
         public Dictionary<string, SaveableDictionary> CustomSpawnRates =
             new Dictionary<string, SaveableDictionary>();
 
@@ -21,6 +25,9 @@ namespace ChooseWildPlantSpawns
             Scribe_Collections.Look(ref CustomSpawnRates, "CustomSpawnRates", LookMode.Value,
                 LookMode.Value,
                 ref customSpawnRatesKeys, ref customSpawnRatesValues);
+            Scribe_Collections.Look(ref CustomDensities, "CustomDensities", LookMode.Value,
+                LookMode.Value,
+                ref customDensitiesKeys, ref customDensitiesValues);
         }
 
         public void ResetManualValues()
@@ -28,6 +35,9 @@ namespace ChooseWildPlantSpawns
             customSpawnRatesKeys = new List<string>();
             customSpawnRatesValues = new List<SaveableDictionary>();
             CustomSpawnRates = new Dictionary<string, SaveableDictionary>();
+            customDensitiesKeys = new List<string>();
+            customDensitiesValues = new List<float>();
+            CustomDensities = new Dictionary<string, float>();
             Main.ApplyBiomeSettings();
         }
 
@@ -37,6 +47,11 @@ namespace ChooseWildPlantSpawns
             if (CustomSpawnRates.ContainsKey(BiomeDefName))
             {
                 CustomSpawnRates.Remove(BiomeDefName);
+            }
+
+            if (CustomDensities.ContainsKey(BiomeDefName))
+            {
+                CustomDensities.Remove(BiomeDefName);
             }
 
             Main.ApplyBiomeSettings();

@@ -5,6 +5,17 @@
 
 Lets you define the spawn-rate of plants in all biomes.
 Similar to the https://steamcommunity.com/sharedfiles/filedetails/?id=2564042934]Choose Wild Animal Spawns but for plants.
+
+If you need higher accuracy than what the sliders provide, try adding the  https://steamcommunity.com/sharedfiles/filedetails/?id=2218078784]BetterSliders mod
+
+[table]
+    [tr]
+        [td]https://invite.gg/Mlie]![Image](https://i.imgur.com/zdzzBrc.png)
+[/td]
+        [td]https://github.com/emipa606/ChooseWildPlantSpawns]![Image](https://i.imgur.com/kTkpTOE.png)
+[/td]
+    [/tr]
+[/table]
 	
 
 ![Image](https://i.imgur.com/pgjQLXV.png)

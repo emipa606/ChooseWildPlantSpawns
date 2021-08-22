@@ -39,6 +39,8 @@ namespace ChooseWildPlantSpawns.Settings
         private static Dictionary<ThingDef, float> currentBiomePlantRecords;
         private static Dictionary<ThingDef, int> currentBiomePlantDecimals;
 
+        private static float currentBiomePlantDensity;
+
         private static string selectedDef = "Settings";
 
         private static string searchText = "";
@@ -61,6 +63,11 @@ namespace ChooseWildPlantSpawns.Settings
             if (instance.Settings.CustomSpawnRates == null)
             {
                 instance.Settings.CustomSpawnRates = new Dictionary<string, SaveableDictionary>();
+            }
+
+            if (instance.Settings.CustomDensities == null)
+            {
+                instance.Settings.CustomDensities = new Dictionary<string, float>();
             }
 
             currentVersion =
@@ -99,6 +106,7 @@ namespace ChooseWildPlantSpawns.Settings
 
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
                 currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
+                currentBiomePlantDensity = 0;
                 selectedDef = value;
 
                 if (value == null || value == "Settings")
@@ -107,6 +115,7 @@ namespace ChooseWildPlantSpawns.Settings
                 }
 
                 var selectedBiome = BiomeDef.Named(selectedDef);
+                currentBiomePlantDensity = selectedBiome.plantDensity;
                 foreach (var plant in Main.AllPlants)
                 {
                     currentBiomePlantRecords[plant] = selectedBiome.CommonalityOfPlant(plant);
@@ -134,6 +143,23 @@ namespace ChooseWildPlantSpawns.Settings
 
         private static void saveBiomeSettings()
         {
+            if (SelectedDef == "Settings")
+            {
+                return;
+            }
+
+            if (currentBiomePlantDensity == Main.VanillaDensities[SelectedDef])
+            {
+                if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+                {
+                    instance.Settings.CustomDensities.Remove(SelectedDef);
+                }
+            }
+            else
+            {
+                instance.Settings.CustomDensities[SelectedDef] = currentBiomePlantDensity;
+            }
+
             if (currentBiomePlantRecords == null)
             {
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
@@ -247,12 +273,12 @@ namespace ChooseWildPlantSpawns.Settings
 
             if (thingDef.graphicData?.graphicClass == typeof(Graphic_Random))
             {
-                texture2D = ((Graphic_Random) thingDef.graphicData.Graphic)?.FirstSubgraphic().MatSingle.mainTexture;
+                texture2D = ((Graphic_Random)thingDef.graphicData.Graphic)?.FirstSubgraphic().MatSingle.mainTexture;
             }
 
             if (thingDef.graphicData?.graphicClass == typeof(Graphic_StackCount))
             {
-                texture2D = ((Graphic_StackCount) thingDef.graphicData.Graphic)?.SubGraphicForStackCount(1, thingDef)
+                texture2D = ((Graphic_StackCount)thingDef.graphicData.Graphic)?.SubGraphicForStackCount(1, thingDef)
                     .MatSingle
                     .mainTexture;
             }
@@ -265,7 +291,7 @@ namespace ChooseWildPlantSpawns.Settings
             var toolTip = $"{thingDef.LabelCap}\n{thingDef.description}";
             if (texture2D.width != texture2D.height)
             {
-                var ratio = (float) texture2D.width / texture2D.height;
+                var ratio = (float)texture2D.width / texture2D.height;
 
                 if (ratio < 1)
                 {
@@ -310,7 +336,8 @@ namespace ChooseWildPlantSpawns.Settings
                     Text.Font = GameFont.Small;
                     listing_Standard.Gap();
 
-                    if (instance.Settings.CustomSpawnRates?.Any() == true)
+                    if (instance.Settings.CustomSpawnRates?.Any() == true ||
+                        instance.Settings.CustomDensities?.Any() == true)
                     {
                         var labelPoint = listing_Standard.Label("CWPS.resetall.label".Translate(), -1F,
                             "CWPS.resetall.tooltip".Translate());
@@ -360,7 +387,8 @@ namespace ChooseWildPlantSpawns.Settings
                         searchSize), description);
 
 
-                    if (instance.Settings.CustomSpawnRates?.ContainsKey(SelectedDef) == true)
+                    if (instance.Settings.CustomSpawnRates?.ContainsKey(SelectedDef) == true ||
+                        instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
                     {
                         DrawButton(() =>
                             {
@@ -369,6 +397,7 @@ namespace ChooseWildPlantSpawns.Settings
                                     delegate
                                     {
                                         instance.Settings.ResetOneValue(SelectedDef);
+                                        currentBiomePlantDensity = Main.VanillaDensities[SelectedDef];
                                         var selectedBiome = BiomeDef.Named(SelectedDef);
                                         foreach (var plant in Main.AllPlants)
                                         {
@@ -425,6 +454,21 @@ namespace ChooseWildPlantSpawns.Settings
 
                     var scrollListing = new Listing_Standard();
                     BeginScrollView(ref scrollListing, borderRect, ref scrollPosition, ref scrollContentRect);
+                    if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+                    {
+                        GUI.color = Color.green;
+                    }
+
+                    scrollListing.Gap();
+                    currentBiomePlantDensity =
+                        (float)Math.Round((decimal)Widgets.HorizontalSlider(
+                            scrollListing.GetRect(50),
+                            currentBiomePlantDensity, 0,
+                            3f, false,
+                            currentBiomePlantDensity.ToString(),
+                            "CWPS.commonality.label".Translate()), 4);
+                    GUI.color = Color.white;
+
                     foreach (var plant in plants)
                     {
                         var modInfo = plant.modContentPack?.Name;
@@ -437,7 +481,7 @@ namespace ChooseWildPlantSpawns.Settings
                             plantTitle = $"{plantTitle.Substring(0, 27)}...";
                         }
 
-                        if (modInfo is {Length: > 30})
+                        if (modInfo is { Length: > 30 })
                         {
                             modInfo = $"{modInfo.Substring(0, 27)}...";
                         }
@@ -450,7 +494,7 @@ namespace ChooseWildPlantSpawns.Settings
                             GUI.color = Color.green;
                         }
 
-                        currentBiomePlantRecords[plant] = (float) Math.Round((decimal) Widgets.HorizontalSlider(
+                        currentBiomePlantRecords[plant] = (float)Math.Round((decimal)Widgets.HorizontalSlider(
                             sliderRect,
                             currentBiomePlantRecords[plant], 0,
                             10f, false,
@@ -514,7 +558,8 @@ namespace ChooseWildPlantSpawns.Settings
             foreach (var biomeDef in allBiomes)
             {
                 var toolTip = string.Empty;
-                if (instance.Settings.CustomSpawnRates.ContainsKey(biomeDef.defName))
+                if (instance.Settings.CustomSpawnRates.ContainsKey(biomeDef.defName) ||
+                    instance.Settings.CustomDensities.ContainsKey(biomeDef.defName))
                 {
                     GUI.color = Color.green;
                     toolTip = "CWPS.customexists".Translate();

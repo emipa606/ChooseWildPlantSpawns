@@ -1,5 +1,8 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.0.2.0 - Added setting for overall density per biome
+
+
 1.0.1.0 - Removed clicking issue, added support for smaller numbers, search also searches in modname
 
 

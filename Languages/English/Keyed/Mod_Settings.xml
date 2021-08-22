@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
   <CWPS.settings>Settings</CWPS.settings>
+  <CWPS.commonality.label>Biome plant overall density</CWPS.commonality.label>
   <CWPS.resetall.label>Manual config reset</CWPS.resetall.label>
   <CWPS.resetall.tooltip>Reset all modified spawn-rates</CWPS.resetall.tooltip>
   <CWPS.resetall.button>Reset all</CWPS.resetall.button>

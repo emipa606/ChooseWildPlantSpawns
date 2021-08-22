@@ -13,6 +13,8 @@ namespace ChooseWildPlantSpawns
         public static readonly Dictionary<string, List<BiomePlantRecord>> VanillaSpawnRates =
             new Dictionary<string, List<BiomePlantRecord>>();
 
+        public static readonly Dictionary<string, float> VanillaDensities = new Dictionary<string, float>();
+
         private static List<ThingDef> allPlants;
         private static List<BiomeDef> allBiomes;
 
@@ -72,6 +74,7 @@ namespace ChooseWildPlantSpawns
         public static void ApplyBiomeSettings()
         {
             var custumSpawnRates = ChooseWildPlantSpawns_Mod.instance.Settings.CustomSpawnRates;
+            var customDensities = ChooseWildPlantSpawns_Mod.instance.Settings.CustomDensities;
             foreach (var biome in AllBiomes)
             {
                 var biomePlantList = new List<BiomePlantRecord>();
@@ -80,6 +83,10 @@ namespace ChooseWildPlantSpawns
                 {
                     customBiomeDefs = custumSpawnRates[biome.defName].dictionary;
                 }
+
+                biome.plantDensity = customDensities?.ContainsKey(biome.defName) == true
+                    ? customDensities[biome.defName]
+                    : VanillaDensities[biome.defName];
 
                 var vanillaBiomeDefs = new List<BiomePlantRecord>();
                 if (VanillaSpawnRates.ContainsKey(biome.defName))
@@ -92,7 +99,7 @@ namespace ChooseWildPlantSpawns
                     if (customBiomeDefs.ContainsKey(thingDef.defName))
                     {
                         biomePlantList.Add(new BiomePlantRecord
-                            {plant = thingDef, commonality = customBiomeDefs[thingDef.defName]});
+                            { plant = thingDef, commonality = customBiomeDefs[thingDef.defName] });
                         continue;
                     }
 
@@ -102,7 +109,7 @@ namespace ChooseWildPlantSpawns
                         continue;
                     }
 
-                    biomePlantList.Add(new BiomePlantRecord {plant = thingDef, commonality = 0});
+                    biomePlantList.Add(new BiomePlantRecord { plant = thingDef, commonality = 0 });
                 }
 
                 Traverse.Create(biome).Field("wildPlants").SetValue(biomePlantList);
@@ -119,6 +126,7 @@ namespace ChooseWildPlantSpawns
         {
             foreach (var biome in AllBiomes)
             {
+                VanillaDensities[biome.defName] = biome.plantDensity;
                 var allWildPlantsInBiome = biome.AllWildPlants;
                 if (!allWildPlantsInBiome.Any())
                 {
@@ -129,7 +137,7 @@ namespace ChooseWildPlantSpawns
                 foreach (var plant in biome.AllWildPlants)
                 {
                     currentBiomeRecord.Add(new BiomePlantRecord
-                        {plant = plant, commonality = biome.CommonalityOfPlant(plant)});
+                        { plant = plant, commonality = biome.CommonalityOfPlant(plant) });
                 }
 
                 VanillaSpawnRates[biome.defName] = currentBiomeRecord;
@@ -140,6 +148,7 @@ namespace ChooseWildPlantSpawns
         {
             foreach (var biome in AllBiomes)
             {
+                biome.plantDensity = VanillaDensities[biome.defName];
                 if (!biome.AllWildPlants.Any() && !VanillaSpawnRates.ContainsKey(biome.defName))
                 {
                     continue;
