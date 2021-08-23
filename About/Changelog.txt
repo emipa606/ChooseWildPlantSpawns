@@ -1,5 +1,8 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.0.3.0 - All plats should now be able to spawn, regardless of biome
+
+
 1.0.2.0 - Added setting for overall density per biome
 
 

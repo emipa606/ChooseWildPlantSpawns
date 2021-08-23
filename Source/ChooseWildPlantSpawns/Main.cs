@@ -114,7 +114,11 @@ namespace ChooseWildPlantSpawns
 
                 Traverse.Create(biome).Field("wildPlants").SetValue(biomePlantList);
 
+                Traverse.Create(biome).Field("cachedWildPlants").SetValue(null);
+
                 Traverse.Create(biome).Field("cachedPlantCommonalities").SetValue(null);
+
+                Traverse.Create(biome).Field("cachedPlantCommonalitiesSum").SetValue(null);
 
                 Traverse.Create(biome).Field("cachedLowestWildPlantOrder").SetValue(null);
 
