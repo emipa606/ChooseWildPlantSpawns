@@ -5,6 +5,9 @@ namespace ChooseWildPlantSpawns
 {
     public class ChooseWildPlantSpawns_Settings : ModSettings
     {
+        public Dictionary<string, float> CustomCaveWeights = new Dictionary<string, float>();
+        private List<string> customCaveWeightsKeys;
+        private List<float> customCaveWeightsValues;
         public Dictionary<string, float> CustomDensities = new Dictionary<string, float>();
         private List<string> customDensitiesKeys;
         private List<float> customDensitiesValues;
@@ -28,6 +31,9 @@ namespace ChooseWildPlantSpawns
             Scribe_Collections.Look(ref CustomDensities, "CustomDensities", LookMode.Value,
                 LookMode.Value,
                 ref customDensitiesKeys, ref customDensitiesValues);
+            Scribe_Collections.Look(ref CustomCaveWeights, "CustomCaveWeights", LookMode.Value,
+                LookMode.Value,
+                ref customCaveWeightsKeys, ref customCaveWeightsValues);
         }
 
         public void ResetManualValues()
@@ -38,12 +44,29 @@ namespace ChooseWildPlantSpawns
             customDensitiesKeys = new List<string>();
             customDensitiesValues = new List<float>();
             CustomDensities = new Dictionary<string, float>();
+            customCaveWeightsKeys = new List<string>();
+            customCaveWeightsValues = new List<float>();
+            CustomCaveWeights = new Dictionary<string, float>();
             Main.ApplyBiomeSettings();
+            foreach (var cavePlant in Main.AllCavePlants)
+            {
+                cavePlant.plant.cavePlantWeight = Main.VanillaCaveWeights[cavePlant.defName];
+            }
         }
 
 
         public void ResetOneValue(string BiomeDefName)
         {
+            if (BiomeDefName == "Caves")
+            {
+                foreach (var cavePlant in Main.AllCavePlants)
+                {
+                    cavePlant.plant.cavePlantWeight = Main.VanillaCaveWeights[cavePlant.defName];
+                }
+
+                return;
+            }
+
             if (CustomSpawnRates.ContainsKey(BiomeDefName))
             {
                 CustomSpawnRates.Remove(BiomeDefName);

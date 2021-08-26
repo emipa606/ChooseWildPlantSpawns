@@ -1,5 +1,8 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.0.4.0 - Added settings for caves
+
+
 1.0.3.0 - All plats should now be able to spawn, regardless of biome
 
 

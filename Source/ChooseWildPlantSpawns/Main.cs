@@ -15,7 +15,10 @@ namespace ChooseWildPlantSpawns
 
         public static readonly Dictionary<string, float> VanillaDensities = new Dictionary<string, float>();
 
+        public static readonly Dictionary<string, float> VanillaCaveWeights = new Dictionary<string, float>();
+
         private static List<ThingDef> allPlants;
+        private static List<ThingDef> allCavePlants;
         private static List<BiomeDef> allBiomes;
 
         static Main()
@@ -23,6 +26,15 @@ namespace ChooseWildPlantSpawns
             saveVanillaValues();
             clearPlantDefs();
             ApplyBiomeSettings();
+
+            var customWeights = ChooseWildPlantSpawns_Mod.instance.Settings.CustomCaveWeights;
+            foreach (var cavePlant in AllCavePlants)
+            {
+                if (customWeights?.ContainsKey(cavePlant.defName) == true)
+                {
+                    cavePlant.plant.cavePlantWeight = customWeights[cavePlant.defName];
+                }
+            }
         }
 
         public static List<ThingDef> AllPlants
@@ -40,6 +52,23 @@ namespace ChooseWildPlantSpawns
                 return allPlants;
             }
             set => allPlants = value;
+        }
+
+        public static List<ThingDef> AllCavePlants
+        {
+            get
+            {
+                if (allCavePlants == null || allCavePlants.Count == 0)
+                {
+                    allCavePlants = (from plant in DefDatabase<ThingDef>.AllDefsListForReading
+                        where plant.plant is { cavePlant: true }
+                        orderby plant.label
+                        select plant).ToList();
+                }
+
+                return allCavePlants;
+            }
+            set => allCavePlants = value;
         }
 
         public static List<BiomeDef> AllBiomes
@@ -75,6 +104,7 @@ namespace ChooseWildPlantSpawns
         {
             var custumSpawnRates = ChooseWildPlantSpawns_Mod.instance.Settings.CustomSpawnRates;
             var customDensities = ChooseWildPlantSpawns_Mod.instance.Settings.CustomDensities;
+
             foreach (var biome in AllBiomes)
             {
                 var biomePlantList = new List<BiomePlantRecord>();
@@ -145,6 +175,11 @@ namespace ChooseWildPlantSpawns
                 }
 
                 VanillaSpawnRates[biome.defName] = currentBiomeRecord;
+            }
+
+            foreach (var cavePlant in AllCavePlants)
+            {
+                VanillaCaveWeights[cavePlant.defName] = cavePlant.plant.cavePlantWeight;
             }
         }
 

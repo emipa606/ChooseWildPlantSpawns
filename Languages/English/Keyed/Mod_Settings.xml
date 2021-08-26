@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
   <CWPS.settings>Settings</CWPS.settings>
+  <CWPS.caves>Caves</CWPS.caves>
+  <CWPS.caves.description>Caves are not biomes by themselved but uses the spawnrate of plants for the biome they are in. Some plants have a defined weighting that determines how many of each plant should spawn in relation to other cave plants. For caveplants without a weighting the value is default set to 1.</CWPS.caves.description>
   <CWPS.commonality.label>Biome plant overall density</CWPS.commonality.label>
   <CWPS.resetall.label>Manual config reset</CWPS.resetall.label>
   <CWPS.resetall.tooltip>Reset all modified spawn-rates</CWPS.resetall.tooltip>

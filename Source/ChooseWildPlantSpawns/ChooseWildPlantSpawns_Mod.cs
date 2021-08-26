@@ -45,6 +45,7 @@ namespace ChooseWildPlantSpawns.Settings
 
         private static string searchText = "";
 
+        private static readonly Color alternateBackground = new Color(0.1f, 0.1f, 0.1f, 0.5f);
 
         /// <summary>
         ///     The private settings
@@ -98,7 +99,7 @@ namespace ChooseWildPlantSpawns.Settings
             get => selectedDef;
             set
             {
-                if (selectedDef != null && selectedDef != "Settings")
+                if (selectedDef != null && selectedDef != "Settings" && selectedDef != "Caves")
                 {
                     saveBiomeSettings();
                     Main.ApplyBiomeSettings();
@@ -109,7 +110,7 @@ namespace ChooseWildPlantSpawns.Settings
                 currentBiomePlantDensity = 0;
                 selectedDef = value;
 
-                if (value == null || value == "Settings")
+                if (value == null || value == "Settings" || value == "Caves")
                 {
                     return;
                 }
@@ -143,7 +144,7 @@ namespace ChooseWildPlantSpawns.Settings
 
         private static void saveBiomeSettings()
         {
-            if (SelectedDef == "Settings")
+            if (SelectedDef == "Settings" || SelectedDef == "Caves")
             {
                 return;
             }
@@ -337,7 +338,8 @@ namespace ChooseWildPlantSpawns.Settings
                     listing_Standard.Gap();
 
                     if (instance.Settings.CustomSpawnRates?.Any() == true ||
-                        instance.Settings.CustomDensities?.Any() == true)
+                        instance.Settings.CustomDensities?.Any() == true ||
+                        instance.Settings.CustomCaveWeights?.Any() == true)
                     {
                         var labelPoint = listing_Standard.Label("CWPS.resetall.label".Translate(), -1F,
                             "CWPS.resetall.tooltip".Translate());
@@ -361,6 +363,124 @@ namespace ChooseWildPlantSpawns.Settings
                     }
 
                     listing_Standard.End();
+                    break;
+                }
+                case "Caves":
+                {
+                    listing_Standard.Begin(frameRect);
+                    Text.Font = GameFont.Medium;
+                    var description = "CWPS.caves.description".Translate();
+                    var headerLabel = listing_Standard.Label("CWPS.caves".Translate());
+                    TooltipHandler.TipRegion(new Rect(
+                        headerLabel.position,
+                        searchSize), description);
+
+                    if (instance.Settings.CustomCaveWeights == null)
+                    {
+                        instance.Settings.CustomCaveWeights = new Dictionary<string, float>();
+                    }
+
+                    if (instance.Settings.CustomCaveWeights.Any())
+                    {
+                        DrawButton(() =>
+                            {
+                                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                                    "CWPS.resetone.confirm".Translate(SelectedDef.Translate()),
+                                    delegate { instance.Settings.ResetOneValue(SelectedDef); }));
+                            }, "CWPS.reset.button".Translate(),
+                            new Vector2(headerLabel.position.x + headerLabel.width - buttonSize.x,
+                                headerLabel.position.y));
+                    }
+
+                    Text.Font = GameFont.Small;
+
+                    searchText =
+                        Widgets.TextField(
+                            new Rect(headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
+                                searchSize),
+                            searchText);
+                    TooltipHandler.TipRegion(new Rect(
+                        headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
+                        searchSize), "CWPS.search".Translate());
+
+                    listing_Standard.End();
+
+                    var cavePlants = Main.AllCavePlants;
+                    if (!string.IsNullOrEmpty(searchText))
+                    {
+                        cavePlants = Main.AllCavePlants.Where(def =>
+                                def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack.Name.ToLower()
+                                    .Contains(searchText.ToLower()))
+                            .ToList();
+                    }
+
+                    var borderRect = frameRect;
+                    borderRect.y += headerLabel.y + 40;
+                    borderRect.height -= headerLabel.y + 40;
+                    var scrollContentRect = frameRect;
+                    scrollContentRect.height = cavePlants.Count * 51f;
+                    scrollContentRect.width -= 20;
+                    scrollContentRect.x = 0;
+                    scrollContentRect.y = 0;
+
+
+                    var scrollListing = new Listing_Standard();
+                    BeginScrollView(ref scrollListing, borderRect, ref scrollPosition, ref scrollContentRect);
+                    var alternate = false;
+                    foreach (var cavePlant in cavePlants)
+                    {
+                        var modInfo = cavePlant.modContentPack?.Name;
+                        var rowRect = scrollListing.GetRect(50);
+                        alternate = !alternate;
+                        if (alternate)
+                        {
+                            Widgets.DrawBoxSolid(rowRect.ExpandedBy(10, 0), alternateBackground);
+                        }
+
+                        var sliderRect = new Rect(rowRect.position + new Vector2(iconSize.x, 0),
+                            rowRect.size - new Vector2(iconSize.x, 0));
+
+                        var plantLabel = $"{cavePlant.label.CapitalizeFirst()} ({cavePlant.defName})";
+                        if (plantLabel.Length > 45)
+                        {
+                            plantLabel = $"{plantLabel.Substring(0, 42)}...";
+                        }
+
+                        if (modInfo is { Length: > 45 })
+                        {
+                            modInfo = $"{modInfo.Substring(0, 42)}...";
+                        }
+
+                        if (cavePlant.plant.cavePlantWeight !=
+                            Main.VanillaCaveWeights[cavePlant.defName])
+                        {
+                            instance.Settings.CustomCaveWeights[cavePlant.defName] =
+                                cavePlant.plant.cavePlantWeight;
+                            GUI.color = Color.green;
+                        }
+                        else
+                        {
+                            if (instance.Settings.CustomCaveWeights.ContainsKey(cavePlant.defName))
+                            {
+                                instance.Settings.CustomCaveWeights.Remove(cavePlant.defName);
+                            }
+                        }
+
+                        cavePlant.plant.cavePlantWeight =
+                            (float)Math.Round((decimal)Widgets.HorizontalSlider(
+                                sliderRect,
+                                cavePlant.plant.cavePlantWeight, 0,
+                                2f, false,
+                                cavePlant.plant.cavePlantWeight.ToString(),
+                                plantLabel,
+                                modInfo), 4);
+
+                        GUI.color = Color.white;
+                        DrawIcon(cavePlant,
+                            new Rect(rowRect.position, iconSize));
+                    }
+
+                    EndScrollView(ref scrollListing, ref borderRect, frameRect.width, listing_Standard.CurHeight);
                     break;
                 }
 
@@ -468,11 +588,17 @@ namespace ChooseWildPlantSpawns.Settings
                             currentBiomePlantDensity.ToString(),
                             "CWPS.commonality.label".Translate()), 4);
                     GUI.color = Color.white;
-
+                    var alternate = false;
                     foreach (var plant in plants)
                     {
                         var modInfo = plant.modContentPack?.Name;
                         var rowRect = scrollListing.GetRect(50);
+                        alternate = !alternate;
+                        if (alternate)
+                        {
+                            Widgets.DrawBoxSolid(rowRect.ExpandedBy(10, 0), alternateBackground);
+                        }
+
                         var sliderRect = new Rect(rowRect.position + new Vector2(iconSize.x, 0),
                             rowRect.size - new Vector2(iconSize.x, 0));
                         var plantTitle = plant.label.CapitalizeFirst();
@@ -555,9 +681,26 @@ namespace ChooseWildPlantSpawns.Settings
             }
 
             listing_Standard.ListItemSelectable(null, Color.yellow, out _);
+
+            var toolTip = string.Empty;
+            if (instance.Settings.CustomCaveWeights?.Any() == true)
+            {
+                GUI.color = Color.green;
+                toolTip = "CWPS.customexists".Translate();
+            }
+
+            if (listing_Standard.ListItemSelectable("CWPS.caves".Translate(), Color.yellow,
+                out _, SelectedDef == "Caves", false, toolTip))
+            {
+                SelectedDef = SelectedDef == "Caves" ? null : "Caves";
+            }
+
+            GUI.color = Color.white;
+
+            listing_Standard.ListItemSelectable(null, Color.yellow, out _);
             foreach (var biomeDef in allBiomes)
             {
-                var toolTip = string.Empty;
+                toolTip = string.Empty;
                 if (instance.Settings.CustomSpawnRates.ContainsKey(biomeDef.defName) ||
                     instance.Settings.CustomDensities.ContainsKey(biomeDef.defName))
                 {
