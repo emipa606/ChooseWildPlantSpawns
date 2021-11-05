@@ -1,6 +1,6 @@
 # ChooseWildPlantSpawns
 
-![Image](https://i.imgur.com/WAEzk68.png)
+![Image](https://i.imgur.com/buuPQel.png)
 
 
 Lets you define the spawn-rate of plants in all biomes.
@@ -9,18 +9,9 @@ Similar to the https://steamcommunity.com/sharedfiles/filedetails/?id=2564042934
 Added a slider for the overall plant density per biome.
 
 If you need higher accuracy than what the sliders provide, try adding the  https://steamcommunity.com/sharedfiles/filedetails/?id=2218078784]BetterSliders mod
-
-[table]
-    [tr]
-        [td]https://invite.gg/Mlie]![Image](https://i.imgur.com/zdzzBrc.png)
-[/td]
-        [td]https://github.com/emipa606/ChooseWildPlantSpawns]![Image](https://i.imgur.com/kTkpTOE.png)
-[/td]
-    [/tr]
-[/table]
 	
 
-![Image](https://i.imgur.com/pgjQLXV.png)
+![Image](https://i.imgur.com/O0IIlYj.png)
 
 Since modding is just a hobby for me I expect no donations to keep modding. If you still want to show your support you can gift me anything from my https://store.steampowered.com/wishlist/id/Mlie]Wishlist or buy me a cup of tea.
 
@@ -29,7 +20,7 @@ https://ko-fi.com/G2G55DDYD]![Image](https://i.ibb.co/VWJJb3w/Support-Me-dark-2x
 
 
 
-![Image](https://i.imgur.com/Rs6T6cr.png)
+![Image](https://i.imgur.com/PwoNOj4.png)
 
 
 

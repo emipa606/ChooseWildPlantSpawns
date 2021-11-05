@@ -494,7 +494,6 @@ namespace ChooseWildPlantSpawns.Settings
                         break;
                     }
 
-                    Text.Font = GameFont.Medium;
                     var description = currentDef.description;
                     if (string.IsNullOrEmpty(description))
                     {
@@ -540,8 +539,6 @@ namespace ChooseWildPlantSpawns.Settings
                             new Vector2(headerLabel.position.x + headerLabel.width - buttonSize.x,
                                 headerLabel.position.y));
                     }
-
-                    Text.Font = GameFont.Small;
 
                     searchText =
                         Widgets.TextField(
@@ -669,9 +666,9 @@ namespace ChooseWildPlantSpawns.Settings
             tabContentRect.y = 0;
             tabContentRect.width -= 20;
             var allBiomes = Main.AllBiomes;
-            var listAddition = 24;
+            var listAddition = 50;
 
-            tabContentRect.height = (allBiomes.Count * 25f) + listAddition;
+            tabContentRect.height = (allBiomes.Count * 27f) + listAddition;
             BeginScrollView(ref listing_Standard, tabFrameRect, ref tabsScrollPosition, ref tabContentRect);
             //Text.Font = GameFont.Tiny;
             if (listing_Standard.ListItemSelectable("CWPS.settings".Translate(), Color.yellow,
