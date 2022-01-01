@@ -15,6 +15,7 @@
   <CWPS.reset.button>Reset</CWPS.reset.button>
   <CWPS.undo.button>Undo</CWPS.undo.button>
   <CWPS.save.button>Save</CWPS.save.button>
+  <CWPS.copy.button>Copy from...</CWPS.copy.button>
   <CWPS.search>Search plant</CWPS.search>
   <CWPS.customexists>Has custom spawn-rates defined</CWPS.customexists>
 </LanguageData>

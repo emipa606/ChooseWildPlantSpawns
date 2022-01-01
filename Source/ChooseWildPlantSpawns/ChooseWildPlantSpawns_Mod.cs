@@ -144,82 +144,89 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
     private static void saveBiomeSettings()
     {
-        if (SelectedDef == "Settings" || SelectedDef == "Caves")
+        try
         {
-            return;
-        }
-
-        if (currentBiomePlantDensity == Main.VanillaDensities[SelectedDef])
-        {
-            if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+            if (SelectedDef == "Settings" || SelectedDef == "Caves")
             {
-                instance.Settings.CustomDensities.Remove(SelectedDef);
+                return;
             }
-        }
-        else
-        {
-            instance.Settings.CustomDensities[SelectedDef] = currentBiomePlantDensity;
-        }
 
-        if (currentBiomePlantRecords == null)
-        {
+            if (currentBiomePlantDensity == Main.VanillaDensities[SelectedDef])
+            {
+                if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+                {
+                    instance.Settings.CustomDensities.Remove(SelectedDef);
+                }
+            }
+            else
+            {
+                instance.Settings.CustomDensities[SelectedDef] = currentBiomePlantDensity;
+            }
+
+            if (currentBiomePlantRecords == null)
+            {
+                currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
+                Main.LogMessage($"currentBiomePlantRecords null for {SelectedDef}");
+                return;
+            }
+
+            if (!currentBiomePlantRecords.Any())
+            {
+                Main.LogMessage($"currentBiomePlantRecords for {SelectedDef} empty");
+                return;
+            }
+
+            if (!Main.VanillaSpawnRates.ContainsKey(SelectedDef))
+            {
+                Main.LogMessage($"VanillaSpawnRates not contain {SelectedDef}");
+                currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
+                return;
+            }
+
+            var currentBiomeList = new Dictionary<string, float>();
+            foreach (var plant in Main.AllPlants)
+            {
+                var vanillaValue = Main.VanillaSpawnRates[SelectedDef]
+                    .FirstOrFallback(record => record.plant == plant);
+                if (vanillaValue != null && vanillaValue.commonality.ToString() ==
+                    currentBiomePlantRecords[plant].ToString())
+                {
+                    continue;
+                }
+
+                if (vanillaValue == null && currentBiomePlantRecords[plant] == 0)
+                {
+                    continue;
+                }
+
+                Main.LogMessage(
+                    $"{plant.label}: chosen value {currentBiomePlantRecords[plant]}, vanilla value {vanillaValue?.commonality}");
+                currentBiomeList.Add(plant.defName, currentBiomePlantRecords[plant]);
+            }
+
+            if (!currentBiomeList.Any())
+            {
+                if (instance.Settings.CustomSpawnRates.ContainsKey(SelectedDef))
+                {
+                    instance.Settings.CustomSpawnRates.Remove(SelectedDef);
+                }
+
+                currentBiomePlantRecords = new Dictionary<ThingDef, float>();
+                currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
+                Main.LogMessage($"currentBiomeList for {SelectedDef} empty");
+                return;
+            }
+
+            instance.Settings.CustomSpawnRates[SelectedDef] = new SaveableDictionary(currentBiomeList);
             currentBiomePlantRecords = new Dictionary<ThingDef, float>();
             currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
-            Main.LogMessage($"currentBiomePlantRecords null for {SelectedDef}");
-            return;
         }
-
-        if (!currentBiomePlantRecords.Any())
+        catch (Exception exception)
         {
-            Main.LogMessage($"currentBiomePlantRecords for {SelectedDef} empty");
-            return;
+            Main.LogMessage($"Failed to save values, {exception}", true, true);
         }
-
-        if (!Main.VanillaSpawnRates.ContainsKey(SelectedDef))
-        {
-            Main.LogMessage($"VanillaSpawnRates not contain {SelectedDef}");
-            currentBiomePlantRecords = new Dictionary<ThingDef, float>();
-            currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
-            return;
-        }
-
-        var currentBiomeList = new Dictionary<string, float>();
-        foreach (var plant in Main.AllPlants)
-        {
-            var vanillaValue = Main.VanillaSpawnRates[SelectedDef]
-                .FirstOrFallback(record => record.plant == plant);
-            if (vanillaValue != null && vanillaValue.commonality.ToString() ==
-                currentBiomePlantRecords[plant].ToString())
-            {
-                continue;
-            }
-
-            if (vanillaValue == null && currentBiomePlantRecords[plant] == 0)
-            {
-                continue;
-            }
-
-            Main.LogMessage(
-                $"{plant.label}: chosen value {currentBiomePlantRecords[plant]}, vanilla value {vanillaValue?.commonality}");
-            currentBiomeList.Add(plant.defName, currentBiomePlantRecords[plant]);
-        }
-
-        if (!currentBiomeList.Any())
-        {
-            if (instance.Settings.CustomSpawnRates.ContainsKey(SelectedDef))
-            {
-                instance.Settings.CustomSpawnRates.Remove(SelectedDef);
-            }
-
-            currentBiomePlantRecords = new Dictionary<ThingDef, float>();
-            currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
-            Main.LogMessage($"currentBiomeList for {SelectedDef} empty");
-            return;
-        }
-
-        instance.Settings.CustomSpawnRates[SelectedDef] = new SaveableDictionary(currentBiomeList);
-        currentBiomePlantRecords = new Dictionary<ThingDef, float>();
-        currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
     }
 
     /// <summary>
@@ -538,19 +545,23 @@ public class ChooseWildPlantSpawns_Mod : Mod
                                     }
                                 }));
                         }, "CWPS.reset.button".Translate(),
-                        new Vector2(headerLabel.position.x + headerLabel.width - buttonSize.x,
+                        new Vector2(headerLabel.position.x + headerLabel.width - (buttonSize.x * 2),
                             headerLabel.position.y));
                 }
 
                 searchText =
                     Widgets.TextField(
-                        new Rect(headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
+                        new Rect(
+                            headerLabel.position +
+                            new Vector2((frameRect.width / 2) - (searchSize.x / 2) - (buttonSize.x / 2), 0),
                             searchSize),
                         searchText);
                 TooltipHandler.TipRegion(new Rect(
                     headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
                     searchSize), "CWPS.search".Translate());
 
+                DrawButton(delegate { CopySpawnValues(SelectedDef); }, "CWPS.copy.button".Translate(),
+                    headerLabel.position + new Vector2(frameRect.width - buttonSize.x, 0));
                 listing_Standard.End();
 
                 var plants = Main.AllPlants;
@@ -637,6 +648,47 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 break;
             }
         }
+    }
+
+    private static void CopySpawnValues(string originalDef)
+    {
+        var list = new List<FloatMenuOption>();
+
+        foreach (var biome in Main.AllBiomes.Where(biomeDef => biomeDef.defName != originalDef))
+        {
+            void action()
+            {
+                Main.LogMessage($"Copying overall plant density from {biome.defName} to {originalDef}");
+                currentBiomePlantDensity = Main.VanillaDensities[biome.defName];
+                if (instance.Settings.CustomDensities.ContainsKey(biome.defName))
+                {
+                    currentBiomePlantDensity = instance.Settings.CustomDensities[biome.defName];
+                }
+
+                foreach (var plant in Main.AllPlants)
+                {
+                    currentBiomePlantRecords[plant] =
+                        biome.CommonalityOfPlant(plant);
+                    var decimals =
+                        (currentBiomePlantRecords[plant] -
+                         Math.Truncate(currentBiomePlantRecords[plant]))
+                        .ToString().Length;
+
+                    if (decimals < 4)
+                    {
+                        decimals = 4;
+                    }
+
+                    currentBiomePlantDecimals[plant] = decimals;
+                }
+
+                SelectedDef = originalDef;
+            }
+
+            list.Add(new FloatMenuOption(biome.LabelCap, action));
+        }
+
+        Find.WindowStack.Add(new FloatMenu(list));
     }
 
     private void DrawTabsList(Rect rect)
