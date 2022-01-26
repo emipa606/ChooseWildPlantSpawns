@@ -7,6 +7,7 @@ Lets you define the spawn-rate of plants in all biomes.
 Similar to the https://steamcommunity.com/sharedfiles/filedetails/?id=2564042934]Choose Wild Animal Spawns but for plants.
 
 Added a slider for the overall plant density per biome.
+You can also copy values between biomes
 
 If you need higher accuracy than what the sliders provide, try adding the  https://steamcommunity.com/sharedfiles/filedetails/?id=2218078784]BetterSliders mod
 	
