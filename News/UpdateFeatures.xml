@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Defs>
-  <HugsLib.UpdateFeatureDef Abstract="true" Name="UpdateFeatureBase">
+  <HugsLib.UpdateFeatureDef Abstract="true" Name="ChooseWildPlantSpawns_UpdateFeatureBase">
     <modNameReadable>ChooseWildPlantSpawns</modNameReadable>
     <linkUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=2564446762</linkUrl>
   </HugsLib.UpdateFeatureDef>
-  <HugsLib.UpdateFeatureDef ParentName="UpdateFeatureBase">
+  <HugsLib.UpdateFeatureDef ParentName="ChooseWildPlantSpawns_UpdateFeatureBase">
     <defName>ChooseWildPlantSpawns_1_0_2_0</defName>
     <assemblyVersion>1.0.2.0</assemblyVersion>
     <content>Added a setting for modifying the overall plant density for each biome
