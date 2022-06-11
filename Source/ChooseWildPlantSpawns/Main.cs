@@ -164,6 +164,7 @@ public static class Main
             var allWildPlantsInBiome = biome.AllWildPlants;
             if (!allWildPlantsInBiome.Any())
             {
+                VanillaSpawnRates[biome.defName] = new List<BiomePlantRecord>();
                 continue;
             }
 
