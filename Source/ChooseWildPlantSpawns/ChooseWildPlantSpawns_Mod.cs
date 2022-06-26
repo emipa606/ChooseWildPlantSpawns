@@ -60,6 +60,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
         : base(content)
     {
         instance = this;
+        searchText = string.Empty;
         ParseHelper.Parsers<SaveableDictionary>.Register(SaveableDictionary.FromString);
         if (instance.Settings.CustomSpawnRates == null)
         {
@@ -416,8 +417,8 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 if (!string.IsNullOrEmpty(searchText))
                 {
                     cavePlants = Main.AllCavePlants.Where(def =>
-                            def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack.Name.ToLower()
-                                .Contains(searchText.ToLower()))
+                            def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack?.Name?.ToLower()
+                                .Contains(searchText.ToLower()) == true)
                         .ToList();
                 }
 
@@ -584,8 +585,8 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 if (!string.IsNullOrEmpty(searchText))
                 {
                     plants = Main.AllPlants.Where(def =>
-                            def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack.Name.ToLower()
-                                .Contains(searchText.ToLower()))
+                            def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack?.Name?.ToLower()
+                                .Contains(searchText.ToLower()) == true)
                         .ToList();
                 }
 
