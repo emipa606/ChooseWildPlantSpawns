@@ -1,5 +1,8 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.4.1 - Mod updated for 1.4 and passed autotests
+
+
 1.3.5 - Things added via patches does not have a defined mod-name, this caused the search-field to fail. Should be fixed now
 
 
