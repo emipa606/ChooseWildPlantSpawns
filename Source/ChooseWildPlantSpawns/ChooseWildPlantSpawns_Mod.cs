@@ -73,8 +73,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
         }
 
         currentVersion =
-            VersionFromManifest.GetVersionFromModMetaData(
-                ModLister.GetActiveModWithIdentifier("Mlie.ChooseWildPlantSpawns"));
+            VersionFromManifest.GetVersionFromModMetaData(content.ModMetaData);
     }
 
     /// <summary>
@@ -660,13 +659,16 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
         foreach (var biome in Main.AllBiomes.Where(biomeDef => biomeDef.defName != originalDef))
         {
+            list.Add(new FloatMenuOption(biome.LabelCap, action));
+            continue;
+
             void action()
             {
                 Main.LogMessage($"Copying overall plant density from {biome.defName} to {originalDef}");
                 currentBiomePlantDensity = Main.VanillaDensities[biome.defName];
-                if (instance.Settings.CustomDensities.ContainsKey(biome.defName))
+                if (instance.Settings.CustomDensities.TryGetValue(biome.defName, out var density))
                 {
-                    currentBiomePlantDensity = instance.Settings.CustomDensities[biome.defName];
+                    currentBiomePlantDensity = density;
                 }
 
                 foreach (var plant in Main.AllPlants)
@@ -688,8 +690,6 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
                 SelectedDef = originalDef;
             }
-
-            list.Add(new FloatMenuOption(biome.LabelCap, action));
         }
 
         Find.WindowStack.Add(new FloatMenu(list));
@@ -716,13 +716,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
         Widgets.BeginScrollView(tabFrameRect, ref tabsScrollPosition, tabContentRect);
         listing_Standard.Begin(tabContentRect);
         //Text.Font = GameFont.Tiny;
-        if (listing_Standard.ListItemSelectable("CWPS.settings".Translate(), Color.yellow,
-                out _, SelectedDef == "Settings"))
+        if (listing_Standard.ListItemSelectable("CWPS.settings".Translate(), Color.yellow, SelectedDef == "Settings"))
         {
             SelectedDef = SelectedDef == "Settings" ? null : "Settings";
         }
 
-        listing_Standard.ListItemSelectable(null, Color.yellow, out _);
+        listing_Standard.ListItemSelectable(null, Color.yellow);
 
         var toolTip = string.Empty;
         if (instance.Settings.CustomCaveWeights?.Any() == true)
@@ -731,15 +730,15 @@ public class ChooseWildPlantSpawns_Mod : Mod
             toolTip = "CWPS.customexists".Translate();
         }
 
-        if (listing_Standard.ListItemSelectable("CWPS.caves".Translate(), Color.yellow,
-                out _, SelectedDef == "Caves", false, toolTip))
+        if (listing_Standard.ListItemSelectable("CWPS.caves".Translate(), Color.yellow, SelectedDef == "Caves", false,
+                toolTip))
         {
             SelectedDef = SelectedDef == "Caves" ? null : "Caves";
         }
 
         GUI.color = Color.white;
 
-        listing_Standard.ListItemSelectable(null, Color.yellow, out _);
+        listing_Standard.ListItemSelectable(null, Color.yellow);
         foreach (var biomeDef in allBiomes)
         {
             toolTip = string.Empty;
@@ -751,7 +750,6 @@ public class ChooseWildPlantSpawns_Mod : Mod
             }
 
             if (listing_Standard.ListItemSelectable(biomeDef.label.CapitalizeFirst(), Color.yellow,
-                    out _,
                     SelectedDef == biomeDef.defName, false, toolTip))
             {
                 SelectedDef = SelectedDef == biomeDef.defName ? null : biomeDef.defName;

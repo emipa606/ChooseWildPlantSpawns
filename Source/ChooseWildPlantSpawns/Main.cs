@@ -30,9 +30,9 @@ public static class Main
         var customWeights = ChooseWildPlantSpawns_Mod.instance.Settings.CustomCaveWeights;
         foreach (var cavePlant in AllCavePlants)
         {
-            if (customWeights?.ContainsKey(cavePlant.defName) == true)
+            if (customWeights?.TryGetValue(cavePlant.defName, out var weight) is true)
             {
-                cavePlant.plant.cavePlantWeight = customWeights[cavePlant.defName];
+                cavePlant.plant.cavePlantWeight = weight;
             }
         }
     }
@@ -109,27 +109,27 @@ public static class Main
         {
             var biomePlantList = new List<BiomePlantRecord>();
             var customBiomeDefs = new Dictionary<string, float>();
-            if (custumSpawnRates.ContainsKey(biome.defName))
+            if (custumSpawnRates.TryGetValue(biome.defName, out var rate))
             {
-                customBiomeDefs = custumSpawnRates[biome.defName].dictionary;
+                customBiomeDefs = rate.dictionary;
             }
 
-            biome.plantDensity = customDensities?.ContainsKey(biome.defName) == true
-                ? customDensities[biome.defName]
+            biome.plantDensity = customDensities?.TryGetValue(biome.defName, out var density) is true
+                ? density
                 : VanillaDensities[biome.defName];
 
             var vanillaBiomeDefs = new List<BiomePlantRecord>();
-            if (VanillaSpawnRates.ContainsKey(biome.defName))
+            if (VanillaSpawnRates.TryGetValue(biome.defName, out var spawnRate))
             {
-                vanillaBiomeDefs = VanillaSpawnRates[biome.defName];
+                vanillaBiomeDefs = spawnRate;
             }
 
             foreach (var thingDef in AllPlants)
             {
-                if (customBiomeDefs.ContainsKey(thingDef.defName))
+                if (customBiomeDefs.TryGetValue(thingDef.defName, out var def))
                 {
                     biomePlantList.Add(new BiomePlantRecord
-                        { plant = thingDef, commonality = customBiomeDefs[thingDef.defName] });
+                        { plant = thingDef, commonality = def });
                     continue;
                 }
 
@@ -164,7 +164,7 @@ public static class Main
             var allWildPlantsInBiome = biome.AllWildPlants;
             if (!allWildPlantsInBiome.Any())
             {
-                VanillaSpawnRates[biome.defName] = new List<BiomePlantRecord>();
+                VanillaSpawnRates[biome.defName] = [];
                 continue;
             }
 
@@ -194,9 +194,10 @@ public static class Main
                 continue;
             }
 
-            Traverse.Create(biome).Field("wildPlants").SetValue(!VanillaSpawnRates.ContainsKey(biome.defName)
-                ? new List<BiomePlantRecord>()
-                : VanillaSpawnRates[biome.defName]);
+            Traverse.Create(biome).Field("wildPlants").SetValue(
+                !VanillaSpawnRates.TryGetValue(biome.defName, out var rate)
+                    ? []
+                    : rate);
 
             Traverse.Create(biome).Field("cachedPlantCommonalities").SetValue(null);
         }

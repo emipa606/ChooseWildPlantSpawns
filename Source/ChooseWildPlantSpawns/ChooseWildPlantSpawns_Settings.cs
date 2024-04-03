@@ -38,14 +38,14 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
 
     public void ResetManualValues()
     {
-        customSpawnRatesKeys = new List<string>();
-        customSpawnRatesValues = new List<SaveableDictionary>();
+        customSpawnRatesKeys = [];
+        customSpawnRatesValues = [];
         CustomSpawnRates = new Dictionary<string, SaveableDictionary>();
-        customDensitiesKeys = new List<string>();
-        customDensitiesValues = new List<float>();
+        customDensitiesKeys = [];
+        customDensitiesValues = [];
         CustomDensities = new Dictionary<string, float>();
-        customCaveWeightsKeys = new List<string>();
-        customCaveWeightsValues = new List<float>();
+        customCaveWeightsKeys = [];
+        customCaveWeightsValues = [];
         CustomCaveWeights = new Dictionary<string, float>();
         Main.ApplyBiomeSettings();
         foreach (var cavePlant in Main.AllCavePlants)
