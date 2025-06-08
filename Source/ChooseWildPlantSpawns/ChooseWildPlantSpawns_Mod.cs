@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
 using Mlie;
 using RimWorld;
 using UnityEngine;
@@ -11,24 +12,24 @@ namespace ChooseWildPlantSpawns.Settings;
 
 public class ChooseWildPlantSpawns_Mod : Mod
 {
+    private const int ButtonSpacer = 200;
+
+    private const float ColumnSpacer = 0.1f;
+
     /// <summary>
     ///     The instance of the settings to be read by the mod
     /// </summary>
-    public static ChooseWildPlantSpawns_Mod instance;
+    public static ChooseWildPlantSpawns_Mod Instance;
 
-    private static readonly Vector2 buttonSize = new Vector2(120f, 25f);
+    private static readonly Vector2 buttonSize = new(120f, 25f);
 
-    private static readonly Vector2 searchSize = new Vector2(200f, 25f);
+    private static readonly Vector2 searchSize = new(200f, 25f);
 
-    private static readonly Vector2 iconSize = new Vector2(48f, 48f);
-
-    private static readonly int buttonSpacer = 200;
-
-    private static readonly float columnSpacer = 0.1f;
+    private static readonly Vector2 iconSize = new(48f, 48f);
 
     private static float leftSideWidth;
 
-    private static Listing_Standard listing_Standard;
+    private static Listing_Standard listingStandard;
 
     private static Vector2 tabsScrollPosition;
 
@@ -39,13 +40,18 @@ public class ChooseWildPlantSpawns_Mod : Mod
     private static Dictionary<ThingDef, float> currentBiomePlantRecords;
     private static Dictionary<ThingDef, int> currentBiomePlantDecimals;
 
+    private static Dictionary<BiomeDef, float> currentPlantBiomeRecords;
+    private static Dictionary<BiomeDef, int> currentPlantBiomeDecimals;
+
     private static float currentBiomePlantDensity;
 
     private static string selectedDef = "Settings";
 
     private static string searchText = "";
 
-    private static readonly Color alternateBackground = new Color(0.1f, 0.1f, 0.1f, 0.5f);
+    private static float globalValue;
+
+    private static readonly Color alternateBackground = new(0.1f, 0.1f, 0.1f, 0.5f);
 
     /// <summary>
     ///     The private settings
@@ -59,18 +65,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
     public ChooseWildPlantSpawns_Mod(ModContentPack content)
         : base(content)
     {
-        instance = this;
+        Instance = this;
         searchText = string.Empty;
         ParseHelper.Parsers<SaveableDictionary>.Register(SaveableDictionary.FromString);
-        if (instance.Settings.CustomSpawnRates == null)
-        {
-            instance.Settings.CustomSpawnRates = new Dictionary<string, SaveableDictionary>();
-        }
+        Instance.Settings.CustomSpawnRates ??= new Dictionary<string, SaveableDictionary>();
 
-        if (instance.Settings.CustomDensities == null)
-        {
-            instance.Settings.CustomDensities = new Dictionary<string, float>();
-        }
+        Instance.Settings.CustomDensities ??= new Dictionary<string, float>();
 
         currentVersion =
             VersionFromManifest.GetVersionFromModMetaData(content.ModMetaData);
@@ -83,15 +83,10 @@ public class ChooseWildPlantSpawns_Mod : Mod
     {
         get
         {
-            if (settings == null)
-            {
-                settings = GetSettings<ChooseWildPlantSpawns_Settings>();
-            }
+            settings ??= GetSettings<ChooseWildPlantSpawns_Settings>();
 
             return settings;
         }
-
-        set => settings = value;
     }
 
     private static string SelectedDef
@@ -105,21 +100,68 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 Main.ApplyBiomeSettings();
             }
 
+            currentPlantBiomeRecords = new Dictionary<BiomeDef, float>();
+            currentPlantBiomeDecimals = new Dictionary<BiomeDef, int>();
             currentBiomePlantRecords = new Dictionary<ThingDef, float>();
             currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
             currentBiomePlantDensity = 0;
             selectedDef = value;
 
-            if (value == null || value == "Settings" || value == "Caves")
+            if (value is null or "Settings" or "Caves")
             {
+                return;
+            }
+
+            Traverse cachedCommonalitiesTraverse;
+            Dictionary<ThingDef, float> cachedPlantCommonalities;
+            if (Instance.Settings.ReverseSettingsMode)
+            {
+                var selectedPlantDef = ThingDef.Named(selectedDef);
+                foreach (var biomeDef in Main.AllBiomes)
+                {
+                    cachedCommonalitiesTraverse = Traverse.Create(biomeDef)
+                        .Field("cachedPlantCommonalities");
+                    if (cachedCommonalitiesTraverse.GetValue() == null)
+                    {
+                        _ = biomeDef.CommonalityOfPlant(selectedPlantDef);
+                    }
+
+                    cachedPlantCommonalities = (Dictionary<ThingDef, float>)cachedCommonalitiesTraverse.GetValue();
+
+                    var commonality = cachedPlantCommonalities.GetValueOrDefault(selectedPlantDef, 0f);
+
+                    currentPlantBiomeRecords[biomeDef] = commonality;
+                    var decimals =
+                        (currentPlantBiomeRecords[biomeDef] -
+                         Math.Truncate(currentPlantBiomeRecords[biomeDef]))
+                        .ToString().Length;
+
+                    if (decimals < 4)
+                    {
+                        decimals = 4;
+                    }
+
+                    currentPlantBiomeDecimals[biomeDef] = decimals;
+                }
+
                 return;
             }
 
             var selectedBiome = BiomeDef.Named(selectedDef);
             currentBiomePlantDensity = selectedBiome.plantDensity;
+
+            cachedCommonalitiesTraverse = Traverse.Create(selectedBiome).Field("cachedPlantCommonalities");
+            if (cachedCommonalitiesTraverse.GetValue() == null)
+            {
+                _ = selectedBiome.CommonalityOfPlant(Main.AllPlants.First());
+            }
+
+            cachedPlantCommonalities = (Dictionary<ThingDef, float>)cachedCommonalitiesTraverse.GetValue();
             foreach (var plant in Main.AllPlants)
             {
-                currentBiomePlantRecords[plant] = selectedBiome.CommonalityOfPlant(plant);
+                var commonality = cachedPlantCommonalities.GetValueOrDefault(plant, 0f);
+
+                currentBiomePlantRecords[plant] = commonality;
                 var decimals =
                     (currentBiomePlantRecords[plant] - Math.Truncate(currentBiomePlantRecords[plant]))
                     .ToString().Length;
@@ -142,25 +184,107 @@ public class ChooseWildPlantSpawns_Mod : Mod
         SelectedDef = "Settings";
     }
 
+
     private static void saveBiomeSettings()
+    {
+        if (SelectedDef is "Settings" or "Caves")
+        {
+            return;
+        }
+
+        if (Instance.Settings.ReverseSettingsMode)
+        {
+            savePlantSetting();
+            return;
+        }
+
+        saveABiomeSetting();
+    }
+
+    private static void savePlantSetting()
     {
         try
         {
-            if (SelectedDef == "Settings" || SelectedDef == "Caves")
+            var plant = ThingDef.Named(SelectedDef);
+            if (currentPlantBiomeRecords == null)
             {
+                currentPlantBiomeRecords = new Dictionary<BiomeDef, float>();
+                currentPlantBiomeDecimals = new Dictionary<BiomeDef, int>();
+                Main.LogMessage($"currentPlantBiomeRecords null for {SelectedDef}");
                 return;
             }
 
+            if (!currentPlantBiomeRecords.Any())
+            {
+                Main.LogMessage($"currentPlantBiomeRecords for {SelectedDef} empty");
+                return;
+            }
+
+            foreach (var biomeDef in Main.AllBiomes)
+            {
+                var biomeDefName = biomeDef.defName;
+
+                if (!Main.VanillaSpawnRates.TryGetValue(biomeDefName, out var rate))
+                {
+                    Main.LogMessage($"VanillaSpawnRates not contain {biomeDefName}");
+                    continue;
+                }
+
+                var vanillaValue = rate
+                    .FirstOrFallback(record => record.plant == plant);
+                if (vanillaValue != null && vanillaValue.commonality.ToString() ==
+                    currentPlantBiomeRecords[biomeDef].ToString())
+                {
+                    if (Instance.Settings.CustomSpawnRates.ContainsKey(biomeDefName) && Instance.Settings
+                            .CustomSpawnRates[biomeDefName].dictionary.Remove(SelectedDef))
+                    {
+                        if (!Instance.Settings.CustomSpawnRates[biomeDefName].dictionary.Any())
+                        {
+                            Main.LogMessage($"currentBiomeList for {biomeDefName} empty");
+                            Instance.Settings.CustomSpawnRates.Remove(biomeDefName);
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (vanillaValue == null && currentPlantBiomeRecords[biomeDef] == 0)
+                {
+                    continue;
+                }
+
+                Main.LogMessage(
+                    $"{plant.label} in {biomeDefName}: chosen value {currentPlantBiomeRecords[biomeDef]}, vanilla value {vanillaValue?.commonality}");
+
+                if (!Instance.Settings.CustomSpawnRates.ContainsKey(biomeDefName))
+                {
+                    Instance.Settings.CustomSpawnRates[biomeDefName] = new SaveableDictionary();
+                }
+
+                Instance.Settings.CustomSpawnRates[biomeDefName].dictionary[SelectedDef] =
+                    currentPlantBiomeRecords[biomeDef];
+            }
+
+            currentPlantBiomeRecords = new Dictionary<BiomeDef, float>();
+            currentPlantBiomeDecimals = new Dictionary<BiomeDef, int>();
+        }
+        catch (Exception exception)
+        {
+            Main.LogMessage($"Failed to save settings for {SelectedDef}, {exception}", true, true);
+        }
+    }
+
+    private static void saveABiomeSetting()
+    {
+        try
+        {
             if (currentBiomePlantDensity == Main.VanillaDensities[SelectedDef])
             {
-                if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
-                {
-                    instance.Settings.CustomDensities.Remove(SelectedDef);
-                }
+                Instance.Settings.CustomDensities?.Remove(SelectedDef);
             }
             else
             {
-                instance.Settings.CustomDensities[SelectedDef] = currentBiomePlantDensity;
+                Instance.Settings.CustomDensities[SelectedDef] = currentBiomePlantDensity;
             }
 
             if (currentBiomePlantRecords == null)
@@ -208,10 +332,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
             if (!currentBiomeList.Any())
             {
-                if (instance.Settings.CustomSpawnRates.ContainsKey(SelectedDef))
-                {
-                    instance.Settings.CustomSpawnRates.Remove(SelectedDef);
-                }
+                Instance.Settings.CustomSpawnRates.Remove(SelectedDef);
 
                 currentBiomePlantRecords = new Dictionary<ThingDef, float>();
                 currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
@@ -219,7 +340,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 return;
             }
 
-            instance.Settings.CustomSpawnRates[SelectedDef] = new SaveableDictionary(currentBiomeList);
+            Instance.Settings.CustomSpawnRates[SelectedDef] = new SaveableDictionary(currentBiomeList);
             currentBiomePlantRecords = new Dictionary<ThingDef, float>();
             currentBiomePlantDecimals = new Dictionary<ThingDef, int>();
         }
@@ -240,10 +361,10 @@ public class ChooseWildPlantSpawns_Mod : Mod
         var rect2 = rect.ContractedBy(1);
         leftSideWidth = rect2.ContractedBy(10).width / 4;
 
-        listing_Standard = new Listing_Standard();
+        listingStandard = new Listing_Standard();
 
-        DrawOptions(rect2);
-        DrawTabsList(rect2);
+        drawOptions(rect2);
+        drawTabsList(rect2);
         Settings.Write();
     }
 
@@ -257,7 +378,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
     }
 
 
-    private static void DrawButton(Action action, string text, Vector2 pos)
+    private static void drawButton(Action action, string text, Vector2 pos)
     {
         var rect = new Rect(pos.x, pos.y, buttonSize.x, buttonSize.y);
         if (!Widgets.ButtonText(rect, text, true, false, Color.white))
@@ -270,7 +391,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
     }
 
 
-    private void DrawIcon(ThingDef thingDef, Rect rect)
+    private static void drawIcon(ThingDef thingDef, Rect rect)
     {
         if (thingDef == null)
         {
@@ -317,16 +438,16 @@ public class ChooseWildPlantSpawns_Mod : Mod
         TooltipHandler.TipRegion(rect, toolTip);
     }
 
-    private void DrawOptions(Rect rect)
+    private void drawOptions(Rect rect)
     {
         var optionsOuterContainer = rect.ContractedBy(10);
-        optionsOuterContainer.x += leftSideWidth + columnSpacer;
-        optionsOuterContainer.width -= leftSideWidth + columnSpacer;
+        optionsOuterContainer.x += leftSideWidth + ColumnSpacer;
+        optionsOuterContainer.width -= leftSideWidth + ColumnSpacer;
         Widgets.DrawBoxSolid(optionsOuterContainer, Color.grey);
         var optionsInnerContainer = optionsOuterContainer.ContractedBy(1);
         Widgets.DrawBoxSolid(optionsInnerContainer, new ColorInt(42, 43, 44).ToColor);
         var frameRect = optionsInnerContainer.ContractedBy(10);
-        frameRect.x = leftSideWidth + columnSpacer + 20;
+        frameRect.x = leftSideWidth + ColumnSpacer + 20;
         frameRect.y += 15;
         frameRect.height -= 15;
         var contentRect = frameRect;
@@ -338,62 +459,62 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 return;
             case "Settings":
             {
-                listing_Standard.Begin(frameRect);
+                listingStandard.Begin(frameRect);
                 Text.Font = GameFont.Medium;
-                listing_Standard.Label("CWPS.settings".Translate());
+                listingStandard.Label("CWPS.settings".Translate());
                 Text.Font = GameFont.Small;
-                listing_Standard.Gap();
+                listingStandard.Gap();
 
-                if (instance.Settings.CustomSpawnRates?.Any() == true ||
-                    instance.Settings.CustomDensities?.Any() == true ||
-                    instance.Settings.CustomCaveWeights?.Any() == true)
+                if (Instance.Settings.CustomSpawnRates?.Any() == true ||
+                    Instance.Settings.CustomDensities?.Any() == true ||
+                    Instance.Settings.CustomCaveWeights?.Any() == true)
                 {
-                    var labelPoint = listing_Standard.Label("CWPS.resetall.label".Translate(), -1F,
+                    var labelPoint = listingStandard.Label("CWPS.resetall.label".Translate(), -1F,
                         "CWPS.resetall.tooltip".Translate());
-                    DrawButton(() =>
+                    drawButton(() =>
                         {
                             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                                 "CWPS.resetall.confirm".Translate(),
-                                delegate { instance.Settings.ResetManualValues(); }));
+                                delegate { Instance.Settings.ResetManualValues(); }));
                         }, "CWPS.resetall.button".Translate(),
-                        new Vector2(labelPoint.position.x + buttonSpacer, labelPoint.position.y));
+                        new Vector2(labelPoint.position.x + ButtonSpacer, labelPoint.position.y));
                 }
 
-                listing_Standard.CheckboxLabeled("CWPS.logging.label".Translate(), ref Settings.VerboseLogging,
+                listingStandard.CheckboxLabeled("CWPS.reversemode.label".Translate(),
+                    ref Instance.Settings.ReverseSettingsMode,
+                    "CWPS.reversemode.tooltip".Translate());
+                listingStandard.CheckboxLabeled("CWPS.logging.label".Translate(), ref Settings.VerboseLogging,
                     "CWPS.logging.tooltip".Translate());
                 if (currentVersion != null)
                 {
-                    listing_Standard.Gap();
+                    listingStandard.Gap();
                     GUI.contentColor = Color.gray;
-                    listing_Standard.Label("CWPS.version.label".Translate(currentVersion));
+                    listingStandard.Label("CWPS.version.label".Translate(currentVersion));
                     GUI.contentColor = Color.white;
                 }
 
-                listing_Standard.End();
+                listingStandard.End();
                 break;
             }
             case "Caves":
             {
-                listing_Standard.Begin(frameRect);
+                listingStandard.Begin(frameRect);
                 Text.Font = GameFont.Medium;
                 var description = "CWPS.caves.description".Translate();
-                var headerLabel = listing_Standard.Label("CWPS.caves".Translate());
+                var headerLabel = listingStandard.Label("CWPS.caves".Translate());
                 TooltipHandler.TipRegion(new Rect(
                     headerLabel.position,
                     searchSize), description);
 
-                if (instance.Settings.CustomCaveWeights == null)
-                {
-                    instance.Settings.CustomCaveWeights = new Dictionary<string, float>();
-                }
+                Instance.Settings.CustomCaveWeights ??= new Dictionary<string, float>();
 
-                if (instance.Settings.CustomCaveWeights.Any())
+                if (Instance.Settings.CustomCaveWeights.Any())
                 {
-                    DrawButton(() =>
+                    drawButton(() =>
                         {
                             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                                 "CWPS.resetone.confirm".Translate(SelectedDef.Translate()),
-                                delegate { instance.Settings.ResetOneValue(SelectedDef); }));
+                                delegate { Instance.Settings.ResetOneBiome(SelectedDef); }));
                         }, "CWPS.reset.button".Translate(),
                         new Vector2(headerLabel.position.x + headerLabel.width - buttonSize.x,
                             headerLabel.position.y));
@@ -410,7 +531,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
                     searchSize), "CWPS.search".Translate());
 
-                listing_Standard.End();
+                listingStandard.End();
 
                 var cavePlants = Main.AllCavePlants;
                 if (!string.IsNullOrEmpty(searchText))
@@ -462,16 +583,13 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     if (cavePlant.plant.cavePlantWeight !=
                         Main.VanillaCaveWeights[cavePlant.defName])
                     {
-                        instance.Settings.CustomCaveWeights[cavePlant.defName] =
+                        Instance.Settings.CustomCaveWeights[cavePlant.defName] =
                             cavePlant.plant.cavePlantWeight;
                         GUI.color = Color.green;
                     }
                     else
                     {
-                        if (instance.Settings.CustomCaveWeights.ContainsKey(cavePlant.defName))
-                        {
-                            instance.Settings.CustomCaveWeights.Remove(cavePlant.defName);
-                        }
+                        Instance.Settings.CustomCaveWeights.Remove(cavePlant.defName);
                     }
 
                     cavePlant.plant.cavePlantWeight =
@@ -484,7 +602,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
                             modInfo), 4);
 
                     GUI.color = Color.white;
-                    DrawIcon(cavePlant,
+                    drawIcon(cavePlant,
                         new Rect(rowRect.position, iconSize));
                 }
 
@@ -495,59 +613,49 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
             default:
             {
-                var currentDef = BiomeDef.Named(SelectedDef);
-                listing_Standard.Begin(frameRect);
-                if (currentDef == null)
+                BiomeDef currentBiomeDef = null;
+                ThingDef currentPlantDef = null;
+                string description;
+                Rect headerLabel;
+                listingStandard.Begin(frameRect);
+                if (Instance.Settings.ReverseSettingsMode)
                 {
-                    listing_Standard.End();
-                    break;
+                    currentPlantDef = ThingDef.Named(SelectedDef);
+                    if (currentPlantDef == null)
+                    {
+                        listingStandard.End();
+                        break;
+                    }
+
+                    description = currentPlantDef.description;
+                    if (string.IsNullOrEmpty(description))
+                    {
+                        description = currentPlantDef.defName;
+                    }
+
+                    headerLabel = listingStandard.Label(currentPlantDef.label.CapitalizeFirst());
+                }
+                else
+                {
+                    currentBiomeDef = BiomeDef.Named(SelectedDef);
+                    if (currentBiomeDef == null)
+                    {
+                        listingStandard.End();
+                        break;
+                    }
+
+                    description = currentBiomeDef.description;
+                    if (string.IsNullOrEmpty(description))
+                    {
+                        description = currentBiomeDef.defName;
+                    }
+
+                    headerLabel = listingStandard.Label(currentBiomeDef.label.CapitalizeFirst());
                 }
 
-                var description = currentDef.description;
-                if (string.IsNullOrEmpty(description))
-                {
-                    description = currentDef.defName;
-                }
-
-                var headerLabel = listing_Standard.Label(currentDef.label.CapitalizeFirst());
                 TooltipHandler.TipRegion(new Rect(
                     headerLabel.position,
                     searchSize), description);
-
-
-                if (instance.Settings.CustomSpawnRates?.ContainsKey(SelectedDef) == true ||
-                    instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
-                {
-                    DrawButton(() =>
-                        {
-                            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                                "CWPS.resetone.confirm".Translate(currentDef.LabelCap),
-                                delegate
-                                {
-                                    instance.Settings.ResetOneValue(SelectedDef);
-                                    currentBiomePlantDensity = Main.VanillaDensities[SelectedDef];
-                                    var selectedBiome = BiomeDef.Named(SelectedDef);
-                                    foreach (var plant in Main.AllPlants)
-                                    {
-                                        currentBiomePlantRecords[plant] =
-                                            selectedBiome.CommonalityOfPlant(plant);
-                                        var decimals =
-                                            (currentBiomePlantRecords[plant] -
-                                             Math.Truncate(currentBiomePlantRecords[plant]))
-                                            .ToString().Length;
-
-                                        if (decimals < 4)
-                                        {
-                                            decimals = 4;
-                                        }
-
-                                        currentBiomePlantDecimals[plant] = decimals;
-                                    }
-                                }));
-                        }, "CWPS.reset.button".Translate(),
-                        new Vector2(headerLabel.position.x + headerLabel.width - (buttonSize.x * 2),
-                            headerLabel.position.y));
-                }
 
                 searchText =
                     Widgets.TextField(
@@ -560,25 +668,219 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     headerLabel.position + new Vector2((frameRect.width / 2) - (searchSize.x / 2), 0),
                     searchSize), "CWPS.search".Translate());
 
-                DrawButton(delegate { CopySpawnValues(SelectedDef); }, "CWPS.copy.button".Translate(),
+                Rect borderRect;
+                Rect scrollContentRect;
+                Listing_Standard scrollListing;
+                bool alternate;
+                float currentGlobal;
+                bool forceGlobal;
+
+                if (Instance.Settings.ReverseSettingsMode)
+                {
+                    if (Instance.Settings.CustomSpawnRates?.Any(pair =>
+                            pair.Value.dictionary.ContainsKey(SelectedDef)) == true)
+                    {
+                        drawButton(() =>
+                            {
+                                if (currentPlantDef != null)
+                                {
+                                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                                        "CWPS.resetone.confirm".Translate(currentPlantDef.LabelCap),
+                                        delegate
+                                        {
+                                            Instance.Settings.ResetOnePlant(SelectedDef);
+                                            var selectedPlant = ThingDef.Named(SelectedDef);
+                                            foreach (var biomeDef in Main.AllBiomes)
+                                            {
+                                                var cachedCommonalitiesTraverse = Traverse.Create(biomeDef)
+                                                    .Field("cachedPlantCommonalities");
+                                                if (cachedCommonalitiesTraverse.GetValue() == null)
+                                                {
+                                                    _ = biomeDef.CommonalityOfPlant(selectedPlant);
+                                                }
+
+                                                var cachedPlantCommonalities =
+                                                    (Dictionary<ThingDef, float>)
+                                                    cachedCommonalitiesTraverse.GetValue();
+
+                                                var commonality =
+                                                    cachedPlantCommonalities.GetValueOrDefault(selectedPlant, 0f);
+
+                                                currentPlantBiomeRecords[biomeDef] = commonality;
+                                                var decimals =
+                                                    (currentPlantBiomeRecords[biomeDef] -
+                                                     Math.Truncate(currentPlantBiomeRecords[biomeDef]))
+                                                    .ToString().Length;
+
+                                                if (decimals < 4)
+                                                {
+                                                    decimals = 4;
+                                                }
+
+                                                currentPlantBiomeDecimals[biomeDef] = decimals;
+                                            }
+                                        }));
+                                }
+                            }, "CWPS.reset.button".Translate(),
+                            new Vector2(headerLabel.position.x + headerLabel.width - (buttonSize.x * 2),
+                                headerLabel.position.y));
+                    }
+
+                    drawButton(delegate { copyOtherPlantValues(SelectedDef); }, "CWPS.copy.button".Translate(),
+                        headerLabel.position + new Vector2(frameRect.width - buttonSize.x, 0));
+
+                    listingStandard.End();
+                    var biomes = Main.AllBiomes;
+                    if (!string.IsNullOrEmpty(searchText))
+                    {
+                        biomes = Main.AllBiomes.Where(def =>
+                                def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack?.Name.ToLower()
+                                    .Contains(searchText.ToLower()) == true)
+                            .ToList();
+                    }
+
+                    borderRect = frameRect;
+                    borderRect.y += headerLabel.y + 30;
+                    borderRect.height -= headerLabel.y + 30;
+                    scrollContentRect = frameRect;
+                    scrollContentRect.height = biomes.Count * 51f;
+                    scrollContentRect.width -= 20;
+                    scrollContentRect.x = 0;
+                    scrollContentRect.y = 0;
+
+                    scrollListing = new Listing_Standard();
+                    Widgets.BeginScrollView(borderRect, ref scrollPosition, scrollContentRect);
+                    scrollListing.Begin(scrollContentRect);
+
+                    alternate = true;
+                    currentGlobal = globalValue;
+                    globalValue =
+                        (float)Math.Round((decimal)Widgets.HorizontalSlider(
+                            scrollListing.GetRect(50),
+                            globalValue, 0,
+                            3f, false,
+                            globalValue.ToString("N4")
+                                .TrimEnd('0').TrimEnd('.'),
+                            "CWPS.globalvalue".Translate()), 4);
+                    forceGlobal = currentGlobal != globalValue;
+
+                    foreach (var biomeDef in biomes)
+                    {
+                        if (forceGlobal)
+                        {
+                            currentPlantBiomeRecords[biomeDef] = globalValue;
+                        }
+
+                        var modInfo = biomeDef.modContentPack?.Name;
+                        var rowRect = scrollListing.GetRect(50);
+                        alternate = !alternate;
+                        if (alternate)
+                        {
+                            Widgets.DrawBoxSolid(rowRect.ExpandedBy(10, 0), alternateBackground);
+                        }
+
+                        var biomeTitle = biomeDef.label.CapitalizeFirst();
+                        if (biomeTitle.Length > 30)
+                        {
+                            biomeTitle = $"{biomeTitle.Substring(0, 27)}...";
+                        }
+
+                        if (modInfo is { Length: > 30 })
+                        {
+                            modInfo = $"{modInfo.Substring(0, 27)}...";
+                        }
+
+                        if (Instance.Settings.CustomSpawnRates != null && Instance.Settings
+                                .CustomSpawnRates.ContainsKey(biomeDef.defName) && Instance.Settings
+                                .CustomSpawnRates[biomeDef.defName].dictionary?.ContainsKey(SelectedDef) == true)
+                        {
+                            GUI.color = Color.green;
+                        }
+
+                        currentPlantBiomeRecords[biomeDef] =
+                            (float)Math.Round(
+                                (decimal)Widgets.HorizontalSlider(rowRect, currentPlantBiomeRecords[biomeDef], 0, 3f,
+                                    false,
+                                    currentPlantBiomeRecords[biomeDef]
+                                        .ToString($"N{currentPlantBiomeDecimals[biomeDef]}").TrimEnd('0').TrimEnd('.'),
+                                    biomeTitle, modInfo), currentPlantBiomeDecimals[biomeDef]);
+                        GUI.color = Color.white;
+                    }
+
+                    scrollListing.End();
+                    Widgets.EndScrollView();
+                    break;
+                }
+
+                if (Instance.Settings.CustomSpawnRates?.ContainsKey(SelectedDef) == true ||
+                    Instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+                {
+                    drawButton(() =>
+                        {
+                            if (currentBiomeDef != null)
+                            {
+                                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                                    "CWPS.resetone.confirm".Translate(currentBiomeDef.LabelCap),
+                                    delegate
+                                    {
+                                        Instance.Settings.ResetOneBiome(SelectedDef);
+                                        currentBiomePlantDensity = Main.VanillaDensities[SelectedDef];
+                                        var selectedBiome = BiomeDef.Named(SelectedDef);
+
+                                        var cachedCommonailtiesTraverse = Traverse.Create(selectedBiome)
+                                            .Field("cachedPlantCommonalities");
+                                        if (cachedCommonailtiesTraverse.GetValue() == null)
+                                        {
+                                            _ = selectedBiome.CommonalityOfPlant(Main.AllPlants.First());
+                                        }
+
+                                        var cachedPlantCommonalities =
+                                            (Dictionary<ThingDef, float>)cachedCommonailtiesTraverse.GetValue();
+
+                                        foreach (var plant in Main.AllPlants)
+                                        {
+                                            var commonality = cachedPlantCommonalities.GetValueOrDefault(plant, 0f);
+
+                                            currentBiomePlantRecords[plant] = commonality;
+                                            var decimals =
+                                                (currentBiomePlantRecords[plant] -
+                                                 Math.Truncate(currentBiomePlantRecords[plant]))
+                                                .ToString().Length;
+
+                                            if (decimals < 4)
+                                            {
+                                                decimals = 4;
+                                            }
+
+                                            currentBiomePlantDecimals[plant] = decimals;
+                                        }
+                                    }));
+                            }
+                        }, "CWPS.reset.button".Translate(),
+                        new Vector2(headerLabel.position.x + headerLabel.width - (buttonSize.x * 2),
+                            headerLabel.position.y));
+                }
+
+
+                drawButton(delegate { copySpawnValues(SelectedDef); }, "CWPS.copy.button".Translate(),
                     headerLabel.position + new Vector2(frameRect.width - buttonSize.x, 0));
 
-                if (instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
+                if (Instance.Settings.CustomDensities?.ContainsKey(SelectedDef) == true)
                 {
                     GUI.color = Color.green;
                 }
 
-                listing_Standard.Gap();
+                listingStandard.Gap();
                 currentBiomePlantDensity =
                     (float)Math.Round((decimal)Widgets.HorizontalSlider(
-                        listing_Standard.GetRect(50),
+                        listingStandard.GetRect(50),
                         currentBiomePlantDensity, 0,
                         3f, false,
                         currentBiomePlantDensity.ToString(),
                         "CWPS.commonality.label".Translate()), 4);
                 GUI.color = Color.white;
 
-                listing_Standard.End();
+                listingStandard.End();
 
                 var plants = Main.AllPlants;
                 if (!string.IsNullOrEmpty(searchText))
@@ -589,22 +891,37 @@ public class ChooseWildPlantSpawns_Mod : Mod
                         .ToList();
                 }
 
-                var borderRect = frameRect;
+                borderRect = frameRect;
                 borderRect.y += headerLabel.y + 90;
                 borderRect.height -= headerLabel.y + 90;
-                var scrollContentRect = frameRect;
+                scrollContentRect = frameRect;
                 scrollContentRect.height = plants.Count * 51f;
                 scrollContentRect.width -= 20;
                 scrollContentRect.x = 0;
                 scrollContentRect.y = 0;
 
-                var scrollListing = new Listing_Standard();
+                scrollListing = new Listing_Standard();
                 Widgets.BeginScrollView(borderRect, ref scrollPosition, scrollContentRect);
                 scrollListing.Begin(scrollContentRect);
 
-                var alternate = false;
+                alternate = false;
+                currentGlobal = globalValue;
+                globalValue =
+                    (float)Math.Round((decimal)Widgets.HorizontalSlider(
+                        scrollListing.GetRect(50),
+                        globalValue, 0,
+                        10f, false,
+                        globalValue.ToString("N4")
+                            .TrimEnd('0').TrimEnd('.'),
+                        "CWPS.globalvalue".Translate()), 4);
+                forceGlobal = currentGlobal != globalValue;
                 foreach (var plant in plants)
                 {
+                    if (forceGlobal)
+                    {
+                        currentBiomePlantRecords[plant] = globalValue;
+                    }
+
                     var modInfo = plant.modContentPack?.Name;
                     var rowRect = scrollListing.GetRect(50);
                     alternate = !alternate;
@@ -626,8 +943,8 @@ public class ChooseWildPlantSpawns_Mod : Mod
                         modInfo = $"{modInfo.Substring(0, 27)}...";
                     }
 
-                    if (instance.Settings.CustomSpawnRates != null &&
-                        instance.Settings.CustomSpawnRates.ContainsKey(SelectedDef) && instance.Settings
+                    if (Instance.Settings.CustomSpawnRates != null &&
+                        Instance.Settings.CustomSpawnRates.ContainsKey(SelectedDef) && Instance.Settings
                             .CustomSpawnRates[SelectedDef]?.dictionary?.ContainsKey(plant.defName) ==
                         true)
                     {
@@ -642,7 +959,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
                             .TrimEnd('0').TrimEnd('.'), plantTitle,
                         modInfo), currentBiomePlantDecimals[plant]);
                     GUI.color = Color.white;
-                    DrawIcon(plant,
+                    drawIcon(plant,
                         new Rect(rowRect.position, iconSize));
                 }
 
@@ -653,7 +970,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
         }
     }
 
-    private static void CopySpawnValues(string originalDef)
+    private static void copySpawnValues(string originalDef)
     {
         var list = new List<FloatMenuOption>();
 
@@ -666,7 +983,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
             {
                 Main.LogMessage($"Copying overall plant density from {biome.defName} to {originalDef}");
                 currentBiomePlantDensity = Main.VanillaDensities[biome.defName];
-                if (instance.Settings.CustomDensities.TryGetValue(biome.defName, out var density))
+                if (Instance.Settings.CustomDensities.TryGetValue(biome.defName, out var density))
                 {
                     currentBiomePlantDensity = density;
                 }
@@ -695,7 +1012,55 @@ public class ChooseWildPlantSpawns_Mod : Mod
         Find.WindowStack.Add(new FloatMenu(list));
     }
 
-    private void DrawTabsList(Rect rect)
+    private static void copyOtherPlantValues(string originalDef)
+    {
+        var list = new List<FloatMenuOption>();
+
+        foreach (var plant in Main.AllPlants.Where(plantDef => plantDef.defName != originalDef))
+        {
+            list.Add(new FloatMenuOption(plant.LabelCap, action));
+            continue;
+
+            void action()
+            {
+                Main.LogMessage($"Setting spawnrate from {plant.defName}");
+
+                foreach (var biomeDef in Main.AllBiomes)
+                {
+                    var cachedCommonailtiesTraverse = Traverse.Create(biomeDef)
+                        .Field("cachedPlantCommonalities");
+                    if (cachedCommonailtiesTraverse.GetValue() == null)
+                    {
+                        _ = biomeDef.CommonalityOfPlant(plant);
+                    }
+
+                    var cachedPlantCommonalities =
+                        (Dictionary<ThingDef, float>)cachedCommonailtiesTraverse.GetValue();
+
+                    var commonality = cachedPlantCommonalities.GetValueOrDefault(plant, 0f);
+
+                    currentPlantBiomeRecords[biomeDef] = commonality;
+                    var decimals =
+                        (currentPlantBiomeRecords[biomeDef] -
+                         Math.Truncate(currentPlantBiomeRecords[biomeDef]))
+                        .ToString().Length;
+
+                    if (decimals < 4)
+                    {
+                        decimals = 4;
+                    }
+
+                    currentPlantBiomeDecimals[biomeDef] = decimals;
+                }
+
+                SelectedDef = originalDef;
+            }
+        }
+
+        Find.WindowStack.Add(new FloatMenu(list));
+    }
+
+    private static void drawTabsList(Rect rect)
     {
         var scrollContainer = rect.ContractedBy(10);
         scrollContainer.width = leftSideWidth;
@@ -710,27 +1075,60 @@ public class ChooseWildPlantSpawns_Mod : Mod
         tabContentRect.y = 0;
         tabContentRect.width -= 20;
         var allBiomes = Main.AllBiomes;
+        var allPlants = Main.AllPlants;
         var listAddition = 50;
 
-        tabContentRect.height = (allBiomes.Count * 27f) + listAddition;
+        var height = (allBiomes.Count * 27f) + listAddition;
+
+        if (Instance.Settings.ReverseSettingsMode)
+        {
+            height = allPlants.Count * 27f;
+        }
+
+        tabContentRect.height = height;
         Widgets.BeginScrollView(tabFrameRect, ref tabsScrollPosition, tabContentRect);
-        listing_Standard.Begin(tabContentRect);
-        //Text.Font = GameFont.Tiny;
-        if (listing_Standard.ListItemSelectable("CWPS.settings".Translate(), Color.yellow, SelectedDef == "Settings"))
+        listingStandard.Begin(tabContentRect);
+        if (listingStandard.ListItemSelectable("CWPS.settings".Translate(), Color.yellow, SelectedDef == "Settings"))
         {
             SelectedDef = SelectedDef == "Settings" ? null : "Settings";
         }
 
-        listing_Standard.ListItemSelectable(null, Color.yellow);
+        listingStandard.ListItemSelectable(null, Color.yellow);
+        string toolTip;
+        if (Instance.Settings.ReverseSettingsMode)
+        {
+            foreach (var plantDef in allPlants)
+            {
+                toolTip = $"{plantDef.defName} ({plantDef.modContentPack?.Name})\n{plantDef.description}";
+                if (Instance.Settings.CustomSpawnRates?.Any(pair =>
+                        pair.Value.dictionary.ContainsKey(plantDef.defName)) == true)
+                {
+                    GUI.color = Color.green;
+                    toolTip = "CWPS.customexists".Translate();
+                }
 
-        var toolTip = string.Empty;
-        if (instance.Settings.CustomCaveWeights?.Any() == true)
+                if (listingStandard.ListItemSelectable(plantDef.label.CapitalizeFirst(), Color.yellow,
+                        SelectedDef == plantDef.defName, false, toolTip))
+                {
+                    SelectedDef = SelectedDef == plantDef.defName ? null : plantDef.defName;
+                }
+
+                GUI.color = Color.white;
+            }
+
+            listingStandard.End();
+            Widgets.EndScrollView();
+            return;
+        }
+
+        toolTip = string.Empty;
+        if (Instance.Settings.CustomCaveWeights?.Any() == true)
         {
             GUI.color = Color.green;
             toolTip = "CWPS.customexists".Translate();
         }
 
-        if (listing_Standard.ListItemSelectable("CWPS.caves".Translate(), Color.yellow, SelectedDef == "Caves", false,
+        if (listingStandard.ListItemSelectable("CWPS.caves".Translate(), Color.yellow, SelectedDef == "Caves", false,
                 toolTip))
         {
             SelectedDef = SelectedDef == "Caves" ? null : "Caves";
@@ -738,18 +1136,18 @@ public class ChooseWildPlantSpawns_Mod : Mod
 
         GUI.color = Color.white;
 
-        listing_Standard.ListItemSelectable(null, Color.yellow);
+        listingStandard.ListItemSelectable(null, Color.yellow);
         foreach (var biomeDef in allBiomes)
         {
-            toolTip = string.Empty;
-            if (instance.Settings.CustomSpawnRates.ContainsKey(biomeDef.defName) ||
-                instance.Settings.CustomDensities.ContainsKey(biomeDef.defName))
+            toolTip = $"{biomeDef.defName} ({biomeDef.modContentPack?.Name})\n{biomeDef.description}";
+            if (Instance.Settings.CustomSpawnRates.ContainsKey(biomeDef.defName) ||
+                Instance.Settings.CustomDensities.ContainsKey(biomeDef.defName))
             {
                 GUI.color = Color.green;
-                toolTip = "CWPS.customexists".Translate();
+                toolTip += "\n" + "CWPS.customexists".Translate();
             }
 
-            if (listing_Standard.ListItemSelectable(biomeDef.label.CapitalizeFirst(), Color.yellow,
+            if (listingStandard.ListItemSelectable(biomeDef.label.CapitalizeFirst(), Color.yellow,
                     SelectedDef == biomeDef.defName, false, toolTip))
             {
                 SelectedDef = SelectedDef == biomeDef.defName ? null : biomeDef.defName;
@@ -758,8 +1156,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
             GUI.color = Color.white;
         }
 
-        //Text.Font = GameFont.Small;
-        listing_Standard.End();
+        listingStandard.End();
         Widgets.EndScrollView();
     }
 }

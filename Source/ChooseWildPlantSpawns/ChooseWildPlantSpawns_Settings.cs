@@ -1,23 +1,24 @@
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace ChooseWildPlantSpawns;
 
 public class ChooseWildPlantSpawns_Settings : ModSettings
 {
-    public Dictionary<string, float> CustomCaveWeights = new Dictionary<string, float>();
+    public Dictionary<string, float> CustomCaveWeights = new();
     private List<string> customCaveWeightsKeys;
     private List<float> customCaveWeightsValues;
-    public Dictionary<string, float> CustomDensities = new Dictionary<string, float>();
+    public Dictionary<string, float> CustomDensities = new();
     private List<string> customDensitiesKeys;
     private List<float> customDensitiesValues;
 
-    public Dictionary<string, SaveableDictionary> CustomSpawnRates =
-        new Dictionary<string, SaveableDictionary>();
+    public Dictionary<string, SaveableDictionary> CustomSpawnRates = new();
 
     private List<string> customSpawnRatesKeys;
 
     private List<SaveableDictionary> customSpawnRatesValues;
+    public bool ReverseSettingsMode;
 
     public bool VerboseLogging;
 
@@ -25,6 +26,7 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
     {
         base.ExposeData();
         Scribe_Values.Look(ref VerboseLogging, "VerboseLogging");
+        Scribe_Values.Look(ref ReverseSettingsMode, "ReverseSettingsMode");
         Scribe_Collections.Look(ref CustomSpawnRates, "CustomSpawnRates", LookMode.Value,
             LookMode.Value,
             ref customSpawnRatesKeys, ref customSpawnRatesValues);
@@ -55,7 +57,7 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
     }
 
 
-    public void ResetOneValue(string BiomeDefName)
+    public void ResetOneBiome(string BiomeDefName)
     {
         if (BiomeDefName == "Caves")
         {
@@ -67,14 +69,26 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
             return;
         }
 
-        if (CustomSpawnRates.ContainsKey(BiomeDefName))
+        CustomSpawnRates.Remove(BiomeDefName);
+
+        CustomDensities.Remove(BiomeDefName);
+
+        Main.ApplyBiomeSettings();
+    }
+
+    public void ResetOnePlant(string plantDefName)
+    {
+        foreach (var savableDictionary in CustomSpawnRates.Where(saveableDictionary =>
+                     saveableDictionary.Value.dictionary.ContainsKey(plantDefName)))
         {
-            CustomSpawnRates.Remove(BiomeDefName);
+            savableDictionary.Value.dictionary.Remove(plantDefName);
         }
 
-        if (CustomDensities.ContainsKey(BiomeDefName))
+        var emptySets = CustomSpawnRates.Where(pair => !pair.Value.dictionary.Any()).Select(pair => pair.Key).ToList();
+
+        foreach (var emptySet in emptySets)
         {
-            CustomDensities.Remove(BiomeDefName);
+            CustomSpawnRates.Remove(emptySet);
         }
 
         Main.ApplyBiomeSettings();

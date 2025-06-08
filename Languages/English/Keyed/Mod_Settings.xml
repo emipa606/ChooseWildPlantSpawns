@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
   <CWPS.settings>Settings</CWPS.settings>
   <CWPS.caves>Caves</CWPS.caves>
-  <CWPS.caves.description>Caves are not biomes by themselved but uses the spawnrate of plants for the biome they are in. Some plants have a defined weighting that determines how many of each plant should spawn in relation to other cave plants. For caveplants without a weighting the value is default set to 1.</CWPS.caves.description>
+  <CWPS.caves.description>Caves are not biomes by themselves but uses the spawnrate of plants for the biome they are in. Some plants have a defined weighting that determines how many of each plant should spawn in relation to other cave plants. For caveplants without a weighting the value is default set to 1.</CWPS.caves.description>
   <CWPS.commonality.label>Biome plant overall density</CWPS.commonality.label>
   <CWPS.resetall.label>Manual config reset</CWPS.resetall.label>
   <CWPS.resetall.tooltip>Reset all modified spawn-rates</CWPS.resetall.tooltip>
@@ -12,7 +12,10 @@
   <CWPS.logging.label>Enable verbose logging</CWPS.logging.label>
   <CWPS.logging.tooltip>Shows verbose logging, for finding errors</CWPS.logging.tooltip>
   <CWPS.version.label>Installed mod-version: {0}</CWPS.version.label>
+  <CWPS.reversemode.label>Reverse settings-mode</CWPS.reversemode.label>
+  <CWPS.reversemode.tooltip>When active, lets you change spawnrates per plant instead of per biome</CWPS.reversemode.tooltip>
   <CWPS.reset.button>Reset</CWPS.reset.button>
+  <CWPS.globalvalue>Change all</CWPS.globalvalue>
   <CWPS.undo.button>Undo</CWPS.undo.button>
   <CWPS.save.button>Save</CWPS.save.button>
   <CWPS.copy.button>Copy from...</CWPS.copy.button>

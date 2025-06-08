@@ -10,12 +10,11 @@ namespace ChooseWildPlantSpawns;
 [StaticConstructorOnStartup]
 public static class Main
 {
-    public static readonly Dictionary<string, List<BiomePlantRecord>> VanillaSpawnRates =
-        new Dictionary<string, List<BiomePlantRecord>>();
+    public static readonly Dictionary<string, List<BiomePlantRecord>> VanillaSpawnRates = new();
 
-    public static readonly Dictionary<string, float> VanillaDensities = new Dictionary<string, float>();
+    public static readonly Dictionary<string, float> VanillaDensities = new();
 
-    public static readonly Dictionary<string, float> VanillaCaveWeights = new Dictionary<string, float>();
+    public static readonly Dictionary<string, float> VanillaCaveWeights = new();
 
     private static List<ThingDef> allPlants;
     private static List<ThingDef> allCavePlants;
@@ -27,7 +26,7 @@ public static class Main
         clearPlantDefs();
         ApplyBiomeSettings();
 
-        var customWeights = ChooseWildPlantSpawns_Mod.instance.Settings.CustomCaveWeights;
+        var customWeights = ChooseWildPlantSpawns_Mod.Instance.Settings.CustomCaveWeights;
         foreach (var cavePlant in AllCavePlants)
         {
             if (customWeights?.TryGetValue(cavePlant.defName, out var weight) is true)
@@ -102,14 +101,14 @@ public static class Main
 
     public static void ApplyBiomeSettings()
     {
-        var custumSpawnRates = ChooseWildPlantSpawns_Mod.instance.Settings.CustomSpawnRates;
-        var customDensities = ChooseWildPlantSpawns_Mod.instance.Settings.CustomDensities;
+        var customSpawnRates = ChooseWildPlantSpawns_Mod.Instance.Settings.CustomSpawnRates;
+        var customDensities = ChooseWildPlantSpawns_Mod.Instance.Settings.CustomDensities;
 
         foreach (var biome in AllBiomes)
         {
             var biomePlantList = new List<BiomePlantRecord>();
             var customBiomeDefs = new Dictionary<string, float>();
-            if (custumSpawnRates.TryGetValue(biome.defName, out var rate))
+            if (customSpawnRates.TryGetValue(biome.defName, out var rate))
             {
                 customBiomeDefs = rate.dictionary;
             }
@@ -169,10 +168,19 @@ public static class Main
             }
 
             var currentBiomeRecord = new List<BiomePlantRecord>();
+            var cachedCommonailtiesTraverse = Traverse.Create(biome).Field("cachedPlantCommonalities");
+            if (cachedCommonailtiesTraverse.GetValue() == null)
+            {
+                _ = biome.CommonalityOfPlant(AllPlants.First());
+            }
+
+            var cachedPlantCommonalities = (Dictionary<ThingDef, float>)cachedCommonailtiesTraverse.GetValue();
             foreach (var plant in biome.AllWildPlants)
             {
+                var commonality = cachedPlantCommonalities.GetValueOrDefault(plant, 0f);
+
                 currentBiomeRecord.Add(new BiomePlantRecord
-                    { plant = plant, commonality = biome.CommonalityOfPlant(plant) });
+                    { plant = plant, commonality = commonality });
             }
 
             VanillaSpawnRates[biome.defName] = currentBiomeRecord;
@@ -184,25 +192,6 @@ public static class Main
         }
     }
 
-    public static void ResetToVanillaRates()
-    {
-        foreach (var biome in AllBiomes)
-        {
-            biome.plantDensity = VanillaDensities[biome.defName];
-            if (!biome.AllWildPlants.Any() && !VanillaSpawnRates.ContainsKey(biome.defName))
-            {
-                continue;
-            }
-
-            Traverse.Create(biome).Field("wildPlants").SetValue(
-                !VanillaSpawnRates.TryGetValue(biome.defName, out var rate)
-                    ? []
-                    : rate);
-
-            Traverse.Create(biome).Field("cachedPlantCommonalities").SetValue(null);
-        }
-    }
-
     public static void LogMessage(string message, bool forced = false, bool warning = false)
     {
         if (warning)
@@ -211,7 +200,7 @@ public static class Main
             return;
         }
 
-        if (!forced && !ChooseWildPlantSpawns_Mod.instance.Settings.VerboseLogging)
+        if (!forced && !ChooseWildPlantSpawns_Mod.Instance.Settings.VerboseLogging)
         {
             return;
         }

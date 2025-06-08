@@ -1,5 +1,9 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.5.1 - Added reverse mode and change-all slider. Added tooltip for biomes and plants showing defName, what mod they are from and their description to more easily distinguing between similar modded items
+Used DeepL to update translations for ChineseSimplified, French, German
+
+
 1.5.0 - Mod updated for 1.5 and passed autotests
 Used DeepL to update translations for ChineseSimplified, French, German
 

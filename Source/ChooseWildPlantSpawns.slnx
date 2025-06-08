@@ -1,0 +1,6 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Release" />
+  </Configurations>
+  <Project Path="ChooseWildPlantSpawns/ChooseWildPlantSpawns.csproj" />
+</Solution>
