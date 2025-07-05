@@ -2,12 +2,17 @@
   "Continued": false,
   "CanAdd": "0",
   "CanRemove": "0",
-  "PreviewVersion": "1.5",
-  "LastXmlCleaning": "2025-06-08T23:58:30.2758579+02:00",
+  "PreviewVersion": "1.6",
+  "LastXmlCleaning": "2025-07-05T16:48:55.7351174+02:00",
   "SocialImageSet": true,
   "FundingSet": true,
   "SearchTags": [
     " plants",
     " density"
-  ]
+  ],
+  "Patches": false,
+  "Defs": false,
+  "Assemblies": true,
+  "LinesOfCode": 61213.0,
+  "LinesOfXML": 0
 }

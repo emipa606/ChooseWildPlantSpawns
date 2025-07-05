@@ -1076,7 +1076,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
         tabContentRect.width -= 20;
         var allBiomes = Main.AllBiomes;
         var allPlants = Main.AllPlants;
-        var listAddition = 50;
+        const int listAddition = 50;
 
         var height = (allBiomes.Count * 27f) + listAddition;
 

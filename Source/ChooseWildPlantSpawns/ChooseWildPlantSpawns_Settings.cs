@@ -57,9 +57,9 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
     }
 
 
-    public void ResetOneBiome(string BiomeDefName)
+    public void ResetOneBiome(string biomeDefName)
     {
-        if (BiomeDefName == "Caves")
+        if (biomeDefName == "Caves")
         {
             foreach (var cavePlant in Main.AllCavePlants)
             {
@@ -69,9 +69,9 @@ public class ChooseWildPlantSpawns_Settings : ModSettings
             return;
         }
 
-        CustomSpawnRates.Remove(BiomeDefName);
+        CustomSpawnRates.Remove(biomeDefName);
 
-        CustomDensities.Remove(BiomeDefName);
+        CustomDensities.Remove(biomeDefName);
 
         Main.ApplyBiomeSettings();
     }

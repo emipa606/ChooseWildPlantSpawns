@@ -23,10 +23,10 @@ public class SaveableDictionary(Dictionary<string, float> dictionary)
         return returnvalue;
     }
 
-    public static SaveableDictionary FromString(string Str)
+    public static SaveableDictionary FromString(string str)
     {
-        Str = Str.TrimStart('#');
-        var array = Str.Split('#');
+        str = str.TrimStart('#');
+        var array = str.Split('#');
         var returnValue = new Dictionary<string, float>();
         foreach (var s in array)
         {
