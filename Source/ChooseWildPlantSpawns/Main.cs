@@ -50,7 +50,6 @@ public static class Main
 
             return allPlants;
         }
-        set => allPlants = value;
     }
 
     public static List<ThingDef> AllCavePlants
@@ -67,7 +66,6 @@ public static class Main
 
             return allCavePlants;
         }
-        set => allCavePlants = value;
     }
 
     public static List<BiomeDef> AllBiomes
@@ -83,7 +81,6 @@ public static class Main
 
             return allBiomes;
         }
-        set => allBiomes = value;
     }
 
     private static void clearPlantDefs()
@@ -103,6 +100,7 @@ public static class Main
     {
         var customSpawnRates = ChooseWildPlantSpawns_Mod.Instance.Settings.CustomSpawnRates;
         var customDensities = ChooseWildPlantSpawns_Mod.Instance.Settings.CustomDensities;
+
 
         foreach (var biome in AllBiomes)
         {
@@ -125,33 +123,37 @@ public static class Main
 
             foreach (var thingDef in AllPlants)
             {
-                if (customBiomeDefs.TryGetValue(thingDef.defName, out var def))
+                if (customBiomeDefs.TryGetValue(thingDef.defName, out var commonality))
                 {
+                    if (commonality == 0)
+                    {
+                        continue;
+                    }
+
                     biomePlantList.Add(new BiomePlantRecord
-                        { plant = thingDef, commonality = def });
+                        { plant = thingDef, commonality = commonality });
+
                     continue;
                 }
 
-                if (Enumerable.Any(vanillaBiomeDefs, record => record.plant == thingDef))
+                var record = vanillaBiomeDefs.FirstOrDefault(record1 => record1.plant == thingDef);
+                if (record == null || record.commonality == 0)
                 {
-                    biomePlantList.Add(vanillaBiomeDefs.First(record => record.plant == thingDef));
                     continue;
                 }
 
-                biomePlantList.Add(new BiomePlantRecord { plant = thingDef, commonality = 0 });
+                biomePlantList.Add(record);
             }
 
-            Traverse.Create(biome).Field("wildPlants").SetValue(biomePlantList);
+            AccessTools.Field(typeof(BiomeDef), "wildPlants").SetValue(biome, biomePlantList);
 
-            Traverse.Create(biome).Field("cachedWildPlants").SetValue(null);
+            AccessTools.Field(typeof(BiomeDef), "cachedWildPlants").SetValue(biome, null);
 
-            Traverse.Create(biome).Field("cachedPlantCommonalities").SetValue(null);
+            AccessTools.Field(typeof(BiomeDef), "cachedPlantCommonalities").SetValue(biome, null);
 
-            Traverse.Create(biome).Field("cachedPlantCommonalitiesSum").SetValue(null);
+            AccessTools.Field(typeof(BiomeDef), "cachedLowestWildPlantOrder").SetValue(biome, null);
 
-            Traverse.Create(biome).Field("cachedLowestWildPlantOrder").SetValue(null);
-
-            Traverse.Create(biome).Field("cachedMaxWildPlantsClusterRadius").SetValue(null);
+            AccessTools.Field(typeof(BiomeDef), "cachedMaxWildPlantsClusterRadius").SetValue(biome, null);
         }
     }
 

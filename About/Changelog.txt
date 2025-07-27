@@ -1,5 +1,8 @@
 # Changelog for ChooseWildPlantSpawns
 
+1.6.1 - Fixed tree-spawning, fixed search missing last match
+
+
 1.6.0 - Mod updated for 1.6 and passed autotests
 
 

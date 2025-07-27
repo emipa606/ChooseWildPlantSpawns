@@ -572,12 +572,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     var plantLabel = $"{cavePlant.label.CapitalizeFirst()} ({cavePlant.defName})";
                     if (plantLabel.Length > 45)
                     {
-                        plantLabel = $"{plantLabel.Substring(0, 42)}...";
+                        plantLabel = $"{plantLabel[..42]}...";
                     }
 
                     if (modInfo is { Length: > 45 })
                     {
-                        modInfo = $"{modInfo.Substring(0, 42)}...";
+                        modInfo = $"{modInfo[..42]}...";
                     }
 
                     if (cavePlant.plant.cavePlantWeight !=
@@ -782,12 +782,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
                         var biomeTitle = biomeDef.label.CapitalizeFirst();
                         if (biomeTitle.Length > 30)
                         {
-                            biomeTitle = $"{biomeTitle.Substring(0, 27)}...";
+                            biomeTitle = $"{biomeTitle[..27]}...";
                         }
 
                         if (modInfo is { Length: > 30 })
                         {
-                            modInfo = $"{modInfo.Substring(0, 27)}...";
+                            modInfo = $"{modInfo[..27]}...";
                         }
 
                         if (Instance.Settings.CustomSpawnRates != null && Instance.Settings
@@ -886,16 +886,16 @@ public class ChooseWildPlantSpawns_Mod : Mod
                 if (!string.IsNullOrEmpty(searchText))
                 {
                     plants = Main.AllPlants.Where(def =>
-                            def.label.ToLower().Contains(searchText.ToLower()) || def.modContentPack?.Name?.ToLower()
-                                .Contains(searchText.ToLower()) == true)
-                        .ToList();
+                        def.label.ToLower().Contains(searchText.ToLower()) ||
+                        def.modContentPack?.Name?.ToLower().Contains(searchText.ToLower()) == true ||
+                        def.defName.ToLower().Contains(searchText.ToLower())).ToList();
                 }
 
                 borderRect = frameRect;
                 borderRect.y += headerLabel.y + 90;
                 borderRect.height -= headerLabel.y + 90;
                 scrollContentRect = frameRect;
-                scrollContentRect.height = plants.Count * 51f;
+                scrollContentRect.height = (plants.Count + 1) * 51f;
                 scrollContentRect.width -= 20;
                 scrollContentRect.x = 0;
                 scrollContentRect.y = 0;
@@ -935,12 +935,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     var plantTitle = plant.label.CapitalizeFirst();
                     if (plantTitle.Length > 30)
                     {
-                        plantTitle = $"{plantTitle.Substring(0, 27)}...";
+                        plantTitle = $"{plantTitle[..27]}...";
                     }
 
                     if (modInfo is { Length: > 30 })
                     {
-                        modInfo = $"{modInfo.Substring(0, 27)}...";
+                        modInfo = $"{modInfo[..27]}...";
                     }
 
                     if (Instance.Settings.CustomSpawnRates != null &&
