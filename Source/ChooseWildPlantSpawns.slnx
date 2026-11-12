@@ -6,4 +6,10 @@
     <BuildType Name="Release" />
   </Configurations>
   <Project Path="ChooseWildPlantSpawns/ChooseWildPlantSpawns.csproj" />
+  <Folder Name="/XML/About/">
+    <File Path="../About/about.xml" />
+  </Folder>
+  <Folder Name="/XML/Languages/English/Keyed/">
+    <File Path="../Languages/English/Keyed/Mod_Settings.xml" />
+  </Folder>
 </Solution>

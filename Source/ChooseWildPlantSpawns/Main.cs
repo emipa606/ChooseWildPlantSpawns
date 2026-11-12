@@ -16,10 +16,6 @@ public static class Main
 
     public static readonly Dictionary<string, float> VanillaCaveWeights = new();
 
-    private static List<ThingDef> allPlants;
-    private static List<ThingDef> allCavePlants;
-    private static List<BiomeDef> allBiomes;
-
     static Main()
     {
         saveVanillaValues();
@@ -40,15 +36,15 @@ public static class Main
     {
         get
         {
-            if (allPlants == null || allPlants.Count == 0)
+            if (field == null || field.Count == 0)
             {
-                allPlants = (from plant in DefDatabase<ThingDef>.AllDefsListForReading
+                field = (from plant in DefDatabase<ThingDef>.AllDefsListForReading
                     where plant.plant != null
                     orderby plant.label
                     select plant).ToList();
             }
 
-            return allPlants;
+            return field;
         }
     }
 
@@ -56,15 +52,15 @@ public static class Main
     {
         get
         {
-            if (allCavePlants == null || allCavePlants.Count == 0)
+            if (field == null || field.Count == 0)
             {
-                allCavePlants = (from plant in DefDatabase<ThingDef>.AllDefsListForReading
+                field = (from plant in DefDatabase<ThingDef>.AllDefsListForReading
                     where plant.plant is { cavePlant: true }
                     orderby plant.label
                     select plant).ToList();
             }
 
-            return allCavePlants;
+            return field;
         }
     }
 
@@ -72,14 +68,14 @@ public static class Main
     {
         get
         {
-            if (allBiomes == null || allBiomes.Count == 0)
+            if (field == null || field.Count == 0)
             {
-                allBiomes = (from biome in DefDatabase<BiomeDef>.AllDefsListForReading
+                field = (from biome in DefDatabase<BiomeDef>.AllDefsListForReading
                     orderby biome.label
                     select biome).ToList();
             }
 
-            return allBiomes;
+            return field;
         }
     }
 
@@ -173,7 +169,7 @@ public static class Main
             var cachedCommonailtiesTraverse = Traverse.Create(biome).Field("cachedPlantCommonalities");
             if (cachedCommonailtiesTraverse.GetValue() == null)
             {
-                _ = biome.CommonalityOfPlant(AllPlants.First());
+                _ = biome.CommonalityOfPlant(AllPlants[0]);
             }
 
             var cachedPlantCommonalities = (Dictionary<ThingDef, float>)cachedCommonailtiesTraverse.GetValue();

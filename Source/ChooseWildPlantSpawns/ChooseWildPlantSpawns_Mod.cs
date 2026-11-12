@@ -153,7 +153,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
             cachedCommonalitiesTraverse = Traverse.Create(selectedBiome).Field("cachedPlantCommonalities");
             if (cachedCommonalitiesTraverse.GetValue() == null)
             {
-                _ = selectedBiome.CommonalityOfPlant(Main.AllPlants.First());
+                _ = selectedBiome.CommonalityOfPlant(Main.AllPlants[0]);
             }
 
             cachedPlantCommonalities = (Dictionary<ThingDef, float>)cachedCommonalitiesTraverse.GetValue();
@@ -236,13 +236,11 @@ public class ChooseWildPlantSpawns_Mod : Mod
                     currentPlantBiomeRecords[biomeDef].ToString())
                 {
                     if (Instance.Settings.CustomSpawnRates.ContainsKey(biomeDefName) && Instance.Settings
-                            .CustomSpawnRates[biomeDefName].dictionary.Remove(SelectedDef))
+                            .CustomSpawnRates[biomeDefName].dictionary.Remove(SelectedDef) &&
+                        !Instance.Settings.CustomSpawnRates[biomeDefName].dictionary.Any())
                     {
-                        if (!Instance.Settings.CustomSpawnRates[biomeDefName].dictionary.Any())
-                        {
-                            Main.LogMessage($"currentBiomeList for {biomeDefName} empty");
-                            Instance.Settings.CustomSpawnRates.Remove(biomeDefName);
-                        }
+                        Main.LogMessage($"currentBiomeList for {biomeDefName} empty");
+                        Instance.Settings.CustomSpawnRates.Remove(biomeDefName);
                     }
 
                     continue;
@@ -353,12 +351,12 @@ public class ChooseWildPlantSpawns_Mod : Mod
     /// <summary>
     ///     The settings-window
     /// </summary>
-    /// <param name="rect"></param>
-    public override void DoSettingsWindowContents(Rect rect)
+    /// <param name="inRect"></param>
+    public override void DoSettingsWindowContents(Rect inRect)
     {
-        base.DoSettingsWindowContents(rect);
+        base.DoSettingsWindowContents(inRect);
 
-        var rect2 = rect.ContractedBy(1);
+        var rect2 = inRect.ContractedBy(1);
         leftSideWidth = rect2.ContractedBy(10).width / 4;
 
         listingStandard = new Listing_Standard();
@@ -831,7 +829,7 @@ public class ChooseWildPlantSpawns_Mod : Mod
                                             .Field("cachedPlantCommonalities");
                                         if (cachedCommonailtiesTraverse.GetValue() == null)
                                         {
-                                            _ = selectedBiome.CommonalityOfPlant(Main.AllPlants.First());
+                                            _ = selectedBiome.CommonalityOfPlant(Main.AllPlants[0]);
                                         }
 
                                         var cachedPlantCommonalities =

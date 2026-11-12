@@ -1,37 +1,102 @@
-# RimWorld Modding Project: ChooseWildPlantSpawns
-
-Welcome to the `ChooseWildPlantSpawns` mod for RimWorld! This document serves as a guide to understanding the structure and coding conventions used in this project. It will also provide you with instructions and suggestions for using GitHub Copilot to assist you in writing and enhancing mod code.
+# GitHub Copilot Instructions for Choose Wild Plant Spawns Mod
 
 ## Mod Overview and Purpose
 
-The `ChooseWildPlantSpawns` mod allows players to customize the types of wild plants that can spawn in different biomes within their RimWorld game. This enhances the gameplay experience by giving players more control over their environment and optimizing it for their personal strategies and aesthetics.
+**Mod Name:** Choose Wild Plant Spawns  
+**Author:** Mlie  
+**PackageId:** Mlie.ChooseWildPlantSpawns  
+**Description:**  
+This mod allows users to define the spawn rate of plants in all biomes of RimWorld. It provides a slider for overall plant density per biome and enables copying values between biomes. For higher accuracy, users can integrate the BetterSliders mod.
 
 ## Key Features and Systems
 
-- **Customizable Plant Spawns**: Players can choose which plants are allowed to spawn in each biome, tailoring their game to their preferences.
-- **Settings Management**: The mod includes settings that enable players to reset plant spawn preferences either globally or for individual biomes.
-- **Saveable Dictionaries**: Data regarding plant preferences is stored and saved between game sessions, providing a consistent player experience.
+### Main Features
+1. **Plant Spawn Rate Adjustment:**
+   - Allows users to adjust the spawn rate of plants in each biome using a slider.
+   
+2. **Copy Values Between Biomes:**
+   - Provides functionality to copy plant spawn rates from one biome to another.
+
+3. **Settings Window:**
+   - Includes a detailed settings window for configuring plant spawn rates and other related options.
+
+### Systems
+1. **Settings Management:**
+   - Manages user-defined plant spawn rates and provides options to reset settings to their default values.
+
+2. **Harmony Patching:**
+   - Utilizes Harmony for patching vanilla game mechanics to integrate custom plant spawn rates.
+
+3. **Saveable Dictionary:**
+   - Implements a custom saveable dictionary to persist user settings across game sessions.
 
 ## Coding Patterns and Conventions
 
-- **Class Structures**: Key classes in this mod include `ChooseWildPlantSpawns_Mod`, `ChooseWildPlantSpawns_Settings`, `ListingExtension`, `Main`, and `SaveableDictionary`.
-- **Class and Method Visibility**: Most classes are public to ensure accessibility across the mod, while methods are either public when they need to be accessed externally or private for internal logic.
-- **Naming Conventions**: Classes are named using PascalCase, and methods use camelCase. This is in line with C# conventions and improves the readability and maintainability of the code.
+1. **Mod Structure:**
+   - The mod is structured with clear separation of concerns, with each class handling specific functionalities.
+   - The main mod class (`ChooseWildPlantSpawns_Mod`) manages the overall settings and user interface.
+   - Additional classes (`ListingExtension`, `SaveableDictionary`, `Main`) handle specific features like UI extensions, data persistence, and vanilla value management.
+
+2. **Code Naming Conventions:**
+   - Class names are PascalCase and descriptive, e.g., `ChooseWildPlantSpawns_Mod`, `ChooseWildPlantSpawns_Settings`.
+   - Method names are also PascalCase and descriptive, e.g., `DoSettingsWindowContents`, `ApplyBiomeSettings`.
+
+3. **Code Comments:**
+   - Methods and classes are well-documented with XML comments to explain their functionality and usage.
+
+4. **Dependency Management:**
+   - The mod depends on the Harmony mod (brrainz.harmony) for patching vanilla game mechanics.
 
 ## XML Integration
 
-Though the summarized data does not include specific XML files, it's worth noting that RimWorld modding often involves XML definitions. These define items, plants, biomes, and other in-game objects that the C# code interacts with. Ensure all XML attributes and elements are correct and align with C# classes for a seamless integration.
+1. **XML Defs:**
+   - The mod does not introduce new XML definitions. Instead, it modifies existing game mechanics through Harmony patches.
+
+2. **Harmony Patching:**
+   - Harmony is used to patch vanilla game methods to integrate custom plant spawn rates without altering the original game files.
 
 ## Harmony Patching
 
-- **Harmony Usage**: Although not detailed in the summary, Harmony is a necessary tool for modifying RimWorld's existing behavior. If the mod intends to change game behaviors without directly editing the game's assembly, use Harmony patches wisely to avoid conflicts.
-- Create patches when altering game functions to ensure compatibility with other mods and updates.
+1. **Patch Usage:**
+   - Harmony patches are used to modify the behavior of vanilla game methods related to plant spawning and biome settings.
+
+2. **Patch Implementation:**
+   - Patches are implemented in the `Main.cs` file, where methods like `ApplyBiomeSettings` are used to apply user-defined settings to the game.
 
 ## Suggestions for Copilot
 
-- **Code Completion**: Use Copilot to generate repetitive code such as getters and setters, which can ease the development of settings and configuration scripts.
-- **Complex Logic**: For more complex logic, such as customizing biome-based plant spawning or extending existing game systems, Copilot can help provide boilerplate or suggest algorithms based on contextual cues.
-- **Documentation**: Leverage Copilot to suggest documentation comments, improving code readability and maintainability.
-- **Error Handling**: Ensure Copilot's suggestions include proper exception handling, especially when dealing with file operations and mod settings adjustments.
+1. **XML Integration:**
+   - When generating code, consider the integration with Harmony for patching vanilla game mechanics.
 
-By following these guidelines and utilizing GitHub Copilot effectively, you can enhance your mod's development process and ensure a robust and enjoyable experience for your players.
+2. **Settings Management:**
+   - Focus on generating code that manages user settings and provides options to reset to default values.
+
+3. **UI Extensions:**
+   - Generate code that extends the game's UI to include new settings options and buttons for copying plant spawn rates.
+
+4. **Data Persistence:**
+   - Provide examples of how to implement custom saveable dictionaries to persist user settings across game sessions.
+
+5. **Code Comments:**
+   - Include XML comments in generated code to explain the functionality and usage of methods and classes.
+
+6. **Mod Structure:**
+   - Ensure that generated code follows the mod's structure, with clear separation of concerns and descriptive naming conventions.
+
+By following these guidelines, Copilot can generate code that is well-suited for the Choose Wild Plant Spawns mod, enhancing its functionality and maintainability.
+
+## Project Solution Guidelines
+- Relevant mod XML files are included as Solution Items under the solution folder named XML, these can be read and modified from within the solution.
+- Use these in-solution XML files as the primary files for reference and modification.
+- The `.github/copilot-instructions.md` file is included in the solution under the `.github` solution folder, so it should be read/modified from within the solution instead of using paths outside the solution. Update this file once only, as it and the parent-path solution reference point to the same file in this workspace.
+- When making functional changes in this mod, ensure the documented features stay in sync with implementation; use the in-solution `.github` copy as the primary file.
+- In the solution is also a project called Assembly-CSharp, containing a read-only version of the decompiled game source, for reference and debugging purposes.
+- For any new documentation, update this copilot-instructions.md file rather than creating separate documentation files.
+
+
+## Hard rules (must follow)
+- Do NOT run commands that modify the repo (no git commit, git apply, dotnet format) unless explicitly asked.
+- Prefer minimal reads: read only the smallest code region needed (around the suspicious lines).
+- When mentioning SonarQube issues, automatically use the SonarQube MCP service to fetch and address issues instead of making inferred fixes without querying SonarQube first.
+- When mentioning the rimworld log, automatically use the Rimworld MCP service to fetch the log.
+
